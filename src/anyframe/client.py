@@ -18,6 +18,7 @@ from dotenv import find_dotenv as _dotenv_find
 from dotenv import load_dotenv as _dotenv_load
 
 from ._http import SyncHTTP
+from .agents import Agents
 from .credentials import Credentials
 from .exceptions import AuthError
 from .models import User
@@ -105,6 +106,7 @@ class AnyFrame:
         # ── resources ─────────────────────────────────────────────────────
         self.tokens = Tokens(self._http)
         self.credentials = Credentials(self._http)
+        self.agents = Agents(self._http)
 
     # ── identity ──────────────────────────────────────────────────────────
 

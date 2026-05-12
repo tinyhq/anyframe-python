@@ -1,6 +1,6 @@
 """AnyFrame — official Python SDK for the AnyFrame control plane."""
 
-from . import exceptions
+from . import exceptions, models
 from ._version import __version__
 from .exceptions import (
     AnyFrameError,
@@ -12,16 +12,61 @@ from .exceptions import (
     ServerError,
     ValidationError,
 )
+from .models import (
+    Agent,
+    AgentConnectorToggle,
+    AgentDetail,
+    AgentImage,
+    AgentMcp,
+    AgentSkill,
+    Build,
+    BuildQueued,
+    BuildStatus,
+    ChatEvent,
+    Connector,
+    ConnectorAuthorize,
+    ConnectorDiscovery,
+    CredentialPart,
+    Credentials,
+    LogUrl,
+    Session,
+    Snapshot,
+    Token,
+    TokenCreated,
+    User,
+)
 
 __all__ = [
     "APIError",
+    "Agent",
+    "AgentConnectorToggle",
+    "AgentDetail",
+    "AgentImage",
+    "AgentMcp",
+    "AgentSkill",
     "AnyFrameError",
     "AuthError",
+    "Build",
+    "BuildQueued",
+    "BuildStatus",
+    "ChatEvent",
     "ConflictError",
+    "Connector",
+    "ConnectorAuthorize",
+    "ConnectorDiscovery",
+    "CredentialPart",
+    "Credentials",
+    "LogUrl",
     "NotFoundError",
     "RateLimitError",
     "ServerError",
+    "Session",
+    "Snapshot",
+    "Token",
+    "TokenCreated",
+    "User",
     "ValidationError",
     "__version__",
     "exceptions",
+    "models",
 ]

@@ -17,10 +17,13 @@ import time
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
+from ._sse import SSEEvent, parse_sse, parse_sse_async
 from .exceptions import AnyFrameError
-from .models import Session, Snapshot
+from .models import ChatEvent, Session, Snapshot
 
 if TYPE_CHECKING:  # pragma: no cover
+    from collections.abc import AsyncIterator, Iterator
+
     from ._http import AsyncHTTP, SyncHTTP
 
 
@@ -148,6 +151,63 @@ class Sessions:
                 )
             time.sleep(poll_interval)
 
+    # ── chat ──────────────────────────────────────────────────────────────
+
+    def message(self, session_id: SessionId, body: dict[str, Any]) -> dict[str, Any]:
+        """Send a user message to the live chat bridge.
+
+        The control plane proxies the body verbatim to the in-sandbox chat
+        server, so the exact accepted schema lives there — this method does
+        not validate the body.
+
+        Returns:
+            The chat server's JSON response (typically ``{"ok": True, "seq": N}``).
+        """
+        return self._http.request("POST", f"/api/sessions/{_sid(session_id)}/message", json=body)
+
+    def respond(self, session_id: SessionId, body: dict[str, Any]) -> dict[str, Any]:
+        """Send a permission-prompt response (approve / reject a tool call)."""
+        return self._http.request("POST", f"/api/sessions/{_sid(session_id)}/respond", json=body)
+
+    def transcript(
+        self, session_id: SessionId, *, since: int = 0, limit: int = 1000
+    ) -> list[ChatEvent]:
+        """Return persisted chat events, ordered by ``seq`` ascending.
+
+        Args:
+            session_id: The session to read from.
+            since: Return events with ``seq > since``. Defaults to 0 (all).
+            limit: Maximum events to return. Server caps at 5000.
+        """
+        data = self._http.request(
+            "GET",
+            f"/api/sessions/{_sid(session_id)}/transcript",
+            params={"since": since, "limit": limit},
+        )
+        return [ChatEvent.model_validate(row) for row in data]
+
+    def events(
+        self, session_id: SessionId, *, last_event_id: str | None = None
+    ) -> Iterator[SSEEvent]:
+        """Stream chat events as SSE frames in real time.
+
+        Args:
+            session_id: The session to subscribe to.
+            last_event_id: Resume from this event id (forwarded to the server
+                as the ``Last-Event-ID`` header).
+
+        Yields:
+            Parsed :class:`SSEEvent` frames. Use :meth:`SSEEvent.json` to
+            decode the JSON payload and ``event.id`` to checkpoint progress.
+        """
+        headers = {"Accept": "text/event-stream"}
+        if last_event_id is not None:
+            headers["Last-Event-ID"] = last_event_id
+        lines = self._http.stream(
+            "GET", f"/api/sessions/{_sid(session_id)}/events", headers=headers
+        )
+        yield from parse_sse(lines)
+
 
 class AsyncSessions:
     """Async counterpart to :class:`Sessions`."""
@@ -223,6 +283,40 @@ class AsyncSessions:
                     f"session {session_id} did not reach 'running' within {timeout}s",
                 )
             await asyncio.sleep(poll_interval)
+
+    # ── chat ──────────────────────────────────────────────────────────────
+
+    async def message(self, session_id: SessionId, body: dict[str, Any]) -> dict[str, Any]:
+        return await self._http.request(
+            "POST", f"/api/sessions/{_sid(session_id)}/message", json=body
+        )
+
+    async def respond(self, session_id: SessionId, body: dict[str, Any]) -> dict[str, Any]:
+        return await self._http.request(
+            "POST", f"/api/sessions/{_sid(session_id)}/respond", json=body
+        )
+
+    async def transcript(
+        self, session_id: SessionId, *, since: int = 0, limit: int = 1000
+    ) -> list[ChatEvent]:
+        data = await self._http.request(
+            "GET",
+            f"/api/sessions/{_sid(session_id)}/transcript",
+            params={"since": since, "limit": limit},
+        )
+        return [ChatEvent.model_validate(row) for row in data]
+
+    async def events(
+        self, session_id: SessionId, *, last_event_id: str | None = None
+    ) -> AsyncIterator[SSEEvent]:
+        headers = {"Accept": "text/event-stream"}
+        if last_event_id is not None:
+            headers["Last-Event-ID"] = last_event_id
+        lines = self._http.stream(
+            "GET", f"/api/sessions/{_sid(session_id)}/events", headers=headers
+        )
+        async for event in parse_sse_async(lines):
+            yield event
 
 
 __all__ = ["AsyncSessions", "SessionId", "Sessions"]

@@ -1,18 +1,20 @@
 """Sessions resource — ``/api/sessions``.
 
 A session is one live sandbox running an agent. The lifecycle is:
-``booting`` → ``running`` → ``snapshotting`` → ``terminated``; resume
+``booting`` → ``running`` → ``snapshotting`` → ``terminated``; ``resume``
 re-boots from a snapshot.
 
-This module covers the session record itself plus snapshots; chat (message,
-respond, events, transcript) and the preview server (serve_start/stop)
-live in :mod:`anyframe.sessions_chat` and :mod:`anyframe.sessions_serve`
-imported in below.
+This module covers the session record and snapshots, plus the chat bridge
+(``message`` / ``respond`` / ``events`` / ``transcript``) and the in-sandbox
+preview server (``serve_start`` / ``serve_stop`` / ``serve_status`` /
+``serve_logs``) — all wired onto the same :class:`Sessions` resource so
+callers don't have to think about where each method lives.
 """
 
 from __future__ import annotations
 
 import asyncio
+import builtins
 import time
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
@@ -25,6 +27,10 @@ if TYPE_CHECKING:  # pragma: no cover
     from collections.abc import AsyncIterator, Iterator
 
     from ._http import AsyncHTTP, SyncHTTP
+
+# Inside classes that define a ``list()`` method, a bare ``list[T]`` annotation
+# is ambiguous to type checkers — it can resolve to the method rather than the
+# built-in. We use ``builtins.list[T]`` explicitly in those positions.
 
 
 SessionId = str | UUID
@@ -49,7 +55,7 @@ class Sessions:
     def __init__(self, http: SyncHTTP) -> None:
         self._http = http
 
-    def list(self) -> list[Session]:
+    def list(self) -> builtins.list[Session]:
         """Return all sessions owned by the current user, newest first."""
         data = self._http.request("GET", "/api/sessions")
         return [Session.model_validate(row) for row in data]
@@ -109,7 +115,7 @@ class Sessions:
         )
         return Session.model_validate(data)
 
-    def snapshots(self, session_id: SessionId) -> list[Snapshot]:
+    def snapshots(self, session_id: SessionId) -> builtins.list[Snapshot]:
         """List snapshots for a session, newest first."""
         data = self._http.request("GET", f"/api/sessions/{_sid(session_id)}/snapshots")
         return [Snapshot.model_validate(row) for row in data]
@@ -153,25 +159,25 @@ class Sessions:
 
     # ── chat ──────────────────────────────────────────────────────────────
 
-    def message(self, session_id: SessionId, body: dict[str, Any]) -> dict[str, Any]:
+    def message(self, session_id: SessionId, body: dict[str, Any]) -> Any:
         """Send a user message to the live chat bridge.
 
         The control plane proxies the body verbatim to the in-sandbox chat
         server, so the exact accepted schema lives there — this method does
-        not validate the body.
+        not validate the body or the response.
 
         Returns:
             The chat server's JSON response (typically ``{"ok": True, "seq": N}``).
         """
         return self._http.request("POST", f"/api/sessions/{_sid(session_id)}/message", json=body)
 
-    def respond(self, session_id: SessionId, body: dict[str, Any]) -> dict[str, Any]:
+    def respond(self, session_id: SessionId, body: dict[str, Any]) -> Any:
         """Send a permission-prompt response (approve / reject a tool call)."""
         return self._http.request("POST", f"/api/sessions/{_sid(session_id)}/respond", json=body)
 
     def transcript(
         self, session_id: SessionId, *, since: int = 0, limit: int = 1000
-    ) -> list[ChatEvent]:
+    ) -> builtins.list[ChatEvent]:
         """Return persisted chat events, ordered by ``seq`` ascending.
 
         Args:
@@ -236,7 +242,7 @@ class Sessions:
         data = self._http.request("GET", f"/api/sessions/{_sid(session_id)}/serve/status")
         return Session.model_validate(data)
 
-    def serve_logs(self, session_id: SessionId, *, tail: int = 200) -> dict[str, Any]:
+    def serve_logs(self, session_id: SessionId, *, tail: int = 200) -> Any:
         """Return the last ``tail`` lines of preview-server stdout/stderr."""
         return self._http.request(
             "GET",
@@ -251,7 +257,7 @@ class AsyncSessions:
     def __init__(self, http: AsyncHTTP) -> None:
         self._http = http
 
-    async def list(self) -> list[Session]:
+    async def list(self) -> builtins.list[Session]:
         data = await self._http.request("GET", "/api/sessions")
         return [Session.model_validate(row) for row in data]
 
@@ -293,7 +299,7 @@ class AsyncSessions:
         )
         return Session.model_validate(data)
 
-    async def snapshots(self, session_id: SessionId) -> list[Snapshot]:
+    async def snapshots(self, session_id: SessionId) -> builtins.list[Snapshot]:
         data = await self._http.request("GET", f"/api/sessions/{_sid(session_id)}/snapshots")
         return [Snapshot.model_validate(row) for row in data]
 
@@ -322,19 +328,19 @@ class AsyncSessions:
 
     # ── chat ──────────────────────────────────────────────────────────────
 
-    async def message(self, session_id: SessionId, body: dict[str, Any]) -> dict[str, Any]:
+    async def message(self, session_id: SessionId, body: dict[str, Any]) -> Any:
         return await self._http.request(
             "POST", f"/api/sessions/{_sid(session_id)}/message", json=body
         )
 
-    async def respond(self, session_id: SessionId, body: dict[str, Any]) -> dict[str, Any]:
+    async def respond(self, session_id: SessionId, body: dict[str, Any]) -> Any:
         return await self._http.request(
             "POST", f"/api/sessions/{_sid(session_id)}/respond", json=body
         )
 
     async def transcript(
         self, session_id: SessionId, *, since: int = 0, limit: int = 1000
-    ) -> list[ChatEvent]:
+    ) -> builtins.list[ChatEvent]:
         data = await self._http.request(
             "GET",
             f"/api/sessions/{_sid(session_id)}/transcript",
@@ -372,7 +378,7 @@ class AsyncSessions:
         data = await self._http.request("GET", f"/api/sessions/{_sid(session_id)}/serve/status")
         return Session.model_validate(data)
 
-    async def serve_logs(self, session_id: SessionId, *, tail: int = 200) -> dict[str, Any]:
+    async def serve_logs(self, session_id: SessionId, *, tail: int = 200) -> Any:
         return await self._http.request(
             "GET",
             f"/api/sessions/{_sid(session_id)}/serve/logs",

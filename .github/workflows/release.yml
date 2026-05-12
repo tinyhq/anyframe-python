@@ -32,7 +32,7 @@ jobs:
       - run: uv sync --frozen
 
       # Re-run the suite as a guardrail before tagging + publishing. CI also
-      # runs on this push in parallel; this is the belt to that's suspenders.
+      # runs on this push in parallel; this is the suspenders to that belt.
       - name: Tests (pre-release gate)
         run: uv run pytest -q
 

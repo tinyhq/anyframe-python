@@ -86,6 +86,11 @@ ignore = [
 # Pydantic models need their type imports at runtime to build validators,
 # even under `from __future__ import annotations`.
 "src/anyframe/models.py" = ["TC003"]
+# agents.py and sessions.py import ``builtins`` at runtime on purpose, so
+# that ``typing.get_type_hints()`` can resolve ``builtins.list[T]`` in our
+# annotations (used to disambiguate from the resources' own ``list()`` method).
+"src/anyframe/agents.py" = ["TC003"]
+"src/anyframe/sessions.py" = ["TC003"]
 
 [tool.mypy]
 python_version = "3.10"
@@ -107,9 +112,6 @@ upload_to_release = true
 build_command = "uv build"
 commit_parser = "conventional"
 major_on_zero = false            # while in 0.x, breaking changes bump minor
-
-[tool.semantic_release.changelog]
-template_dir = "templates"
 
 [tool.semantic_release.commit_parser_options]
 allowed_tags = ["feat", "fix", "perf", "refactor", "docs", "test", "chore", "build", "ci", "style"]

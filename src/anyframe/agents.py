@@ -13,6 +13,7 @@ this keeps the resource graph flat and obvious in IDE autocomplete.
 from __future__ import annotations
 
 import asyncio
+import builtins
 import time
 from typing import TYPE_CHECKING, Any
 
@@ -37,6 +38,10 @@ if TYPE_CHECKING:  # pragma: no cover
 
     from ._http import AsyncHTTP, SyncHTTP
 
+# Inside classes that define a ``list()`` method, a bare ``list[T]`` annotation
+# is ambiguous to type checkers — it can resolve to the method rather than the
+# built-in. We use ``builtins.list[T]`` explicitly in those positions.
+
 
 _TERMINAL_BUILD_STATES = frozenset({"succeeded", "failed", "cancelled"})
 
@@ -56,7 +61,7 @@ class AgentSkills:
     def __init__(self, http: SyncHTTP) -> None:
         self._http = http
 
-    def list(self, agent_id: int) -> list[AgentSkill]:
+    def list(self, agent_id: int) -> builtins.list[AgentSkill]:
         data = self._http.request("GET", f"/api/agents/{agent_id}/skills")
         return [AgentSkill.model_validate(row) for row in data]
 
@@ -100,7 +105,7 @@ class AgentMcps:
     def __init__(self, http: SyncHTTP) -> None:
         self._http = http
 
-    def list(self, agent_id: int) -> list[AgentMcp]:
+    def list(self, agent_id: int) -> builtins.list[AgentMcp]:
         data = self._http.request("GET", f"/api/agents/{agent_id}/mcps")
         return [AgentMcp.model_validate(row) for row in data]
 
@@ -157,7 +162,7 @@ class AgentConnectorToggles:
     def __init__(self, http: SyncHTTP) -> None:
         self._http = http
 
-    def list(self, agent_id: int) -> list[AgentConnectorToggle]:
+    def list(self, agent_id: int) -> builtins.list[AgentConnectorToggle]:
         data = self._http.request("GET", f"/api/agents/{agent_id}/connectors")
         return [AgentConnectorToggle.model_validate(row) for row in data]
 
@@ -179,7 +184,7 @@ class Agents:
         self.mcps = AgentMcps(http)
         self.connectors = AgentConnectorToggles(http)
 
-    def list(self) -> list[Agent]:
+    def list(self) -> builtins.list[Agent]:
         """Return all agents owned by the current user."""
         data = self._http.request("GET", "/api/agents")
         return [Agent.model_validate(row) for row in data]
@@ -194,7 +199,7 @@ class Agents:
         repo_ref: str | None = None,
         install_cmd: str | None = None,
         serve_cmd: str | None = None,
-        preview_ports: list[int] | None = None,
+        preview_ports: builtins.list[int] | None = None,
         permissions: dict[str, Any] | None = None,
     ) -> Agent:
         """Create a new agent.
@@ -274,7 +279,7 @@ class Agents:
         data = self._http.request("GET", f"/api/agents/{agent_id}/build/status")
         return BuildStatus.model_validate(data)
 
-    def builds(self, agent_id: int, *, limit: int = 20) -> list[Build]:
+    def builds(self, agent_id: int, *, limit: int = 20) -> builtins.list[Build]:
         """Return the most recent build runs for this agent, newest first."""
         data = self._http.request("GET", f"/api/agents/{agent_id}/builds", params={"limit": limit})
         return [Build.model_validate(row) for row in data]
@@ -344,7 +349,7 @@ class AsyncAgentSkills:
     def __init__(self, http: AsyncHTTP) -> None:
         self._http = http
 
-    async def list(self, agent_id: int) -> list[AgentSkill]:
+    async def list(self, agent_id: int) -> builtins.list[AgentSkill]:
         data = await self._http.request("GET", f"/api/agents/{agent_id}/skills")
         return [AgentSkill.model_validate(row) for row in data]
 
@@ -386,7 +391,7 @@ class AsyncAgentMcps:
     def __init__(self, http: AsyncHTTP) -> None:
         self._http = http
 
-    async def list(self, agent_id: int) -> list[AgentMcp]:
+    async def list(self, agent_id: int) -> builtins.list[AgentMcp]:
         data = await self._http.request("GET", f"/api/agents/{agent_id}/mcps")
         return [AgentMcp.model_validate(row) for row in data]
 
@@ -438,7 +443,7 @@ class AsyncAgentConnectorToggles:
     def __init__(self, http: AsyncHTTP) -> None:
         self._http = http
 
-    async def list(self, agent_id: int) -> list[AgentConnectorToggle]:
+    async def list(self, agent_id: int) -> builtins.list[AgentConnectorToggle]:
         data = await self._http.request("GET", f"/api/agents/{agent_id}/connectors")
         return [AgentConnectorToggle.model_validate(row) for row in data]
 
@@ -460,7 +465,7 @@ class AsyncAgents:
         self.mcps = AsyncAgentMcps(http)
         self.connectors = AsyncAgentConnectorToggles(http)
 
-    async def list(self) -> list[Agent]:
+    async def list(self) -> builtins.list[Agent]:
         data = await self._http.request("GET", "/api/agents")
         return [Agent.model_validate(row) for row in data]
 
@@ -474,7 +479,7 @@ class AsyncAgents:
         repo_ref: str | None = None,
         install_cmd: str | None = None,
         serve_cmd: str | None = None,
-        preview_ports: list[int] | None = None,
+        preview_ports: builtins.list[int] | None = None,
         permissions: dict[str, Any] | None = None,
     ) -> Agent:
         body = _prune(
@@ -516,7 +521,7 @@ class AsyncAgents:
         data = await self._http.request("GET", f"/api/agents/{agent_id}/build/status")
         return BuildStatus.model_validate(data)
 
-    async def builds(self, agent_id: int, *, limit: int = 20) -> list[Build]:
+    async def builds(self, agent_id: int, *, limit: int = 20) -> builtins.list[Build]:
         data = await self._http.request(
             "GET", f"/api/agents/{agent_id}/builds", params={"limit": limit}
         )

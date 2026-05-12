@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "anyframe"
-version = "0.0.1"
+version = "1.0.0"
 description = "Official Python SDK for the AnyFrame control plane."
 readme = "README.md"
 requires-python = ">=3.10"

@@ -1,0 +1,132 @@
+"""User-level MCP connectors — ``/api/connectors``.
+
+A connector points one of your agents at an MCP server (Linear, Sentry, a
+custom HTTP server, …). The setup happens once at the user level here;
+each agent then opts in via :class:`anyframe.agents.AgentConnectorToggles`.
+
+Two auth flows are supported:
+
+  - **OAuth DCR**: :meth:`Connectors.discover` to probe the MCP server,
+    then :meth:`Connectors.create_oauth` to register a dynamic client and
+    get an ``authorize_url`` the user opens in a browser.
+  - **Bearer paste**: skip discovery and call :meth:`Connectors.create_bearer`
+    with a pre-issued token, for MCP servers that don't speak OAuth.
+
+If a refresh hard-fails (provider revoked the app, etc.) you can rerun the
+OAuth dance with :meth:`Connectors.reauthorize` without losing the existing
+connector row or per-agent toggles.
+"""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from .models import Connector, ConnectorAuthorize, ConnectorDiscovery
+
+if TYPE_CHECKING:  # pragma: no cover
+    from ._http import AsyncHTTP, SyncHTTP
+
+
+class Connectors:
+    """Manage user-level MCP connectors."""
+
+    def __init__(self, http: SyncHTTP) -> None:
+        self._http = http
+
+    def list(self) -> list[Connector]:
+        """Return every connector the user has set up."""
+        data = self._http.request("GET", "/api/connectors")
+        return [Connector.model_validate(row) for row in data]
+
+    def discover(self, mcp_url: str) -> ConnectorDiscovery:
+        """Probe an MCP URL for OAuth metadata and DCR support.
+
+        Args:
+            mcp_url: The MCP server URL (HTTP or SSE).
+
+        Returns:
+            A discovery record showing whether the server supports OAuth DCR
+            (use :meth:`create_oauth`) or whether you'll need to paste a
+            bearer token (use :meth:`create_bearer`).
+        """
+        data = self._http.request("POST", "/api/connectors/discover", json={"mcp_url": mcp_url})
+        return ConnectorDiscovery.model_validate(data)
+
+    def create_oauth(self, *, mcp_url: str, display_name: str) -> ConnectorAuthorize:
+        """Register a new OAuth-flow connector and return an ``authorize_url``.
+
+        Open the URL in a browser; on success the server stores tokens and
+        redirects back to the dashboard.
+        """
+        data = self._http.request(
+            "POST",
+            "/api/connectors/oauth",
+            json={"mcp_url": mcp_url, "display_name": display_name},
+        )
+        return ConnectorAuthorize.model_validate(data)
+
+    def create_bearer(self, *, mcp_url: str, display_name: str, token: str) -> Connector:
+        """Create a bearer-token connector with a pre-issued token."""
+        data = self._http.request(
+            "POST",
+            "/api/connectors/bearer",
+            json={"mcp_url": mcp_url, "display_name": display_name, "token": token},
+        )
+        return Connector.model_validate(data)
+
+    def reauthorize(self, connector_id: int) -> ConnectorAuthorize:
+        """Rerun the OAuth dance on an existing connector row.
+
+        Useful when refresh tokens expire or the provider revokes the app —
+        the connector row, its display name, and every per-agent toggle are
+        preserved.
+        """
+        data = self._http.request("POST", f"/api/connectors/{connector_id}/reauthorize")
+        return ConnectorAuthorize.model_validate(data)
+
+    def delete(self, connector_id: int) -> None:
+        """Delete a connector. Best-effort RFC 7592 revocation runs server-side."""
+        self._http.request("DELETE", f"/api/connectors/{connector_id}")
+
+
+class AsyncConnectors:
+    """Async counterpart to :class:`Connectors`."""
+
+    def __init__(self, http: AsyncHTTP) -> None:
+        self._http = http
+
+    async def list(self) -> list[Connector]:
+        data = await self._http.request("GET", "/api/connectors")
+        return [Connector.model_validate(row) for row in data]
+
+    async def discover(self, mcp_url: str) -> ConnectorDiscovery:
+        data = await self._http.request(
+            "POST", "/api/connectors/discover", json={"mcp_url": mcp_url}
+        )
+        return ConnectorDiscovery.model_validate(data)
+
+    async def create_oauth(self, *, mcp_url: str, display_name: str) -> ConnectorAuthorize:
+        data = await self._http.request(
+            "POST",
+            "/api/connectors/oauth",
+            json={"mcp_url": mcp_url, "display_name": display_name},
+        )
+        return ConnectorAuthorize.model_validate(data)
+
+    async def create_bearer(self, *, mcp_url: str, display_name: str, token: str) -> Connector:
+        data = await self._http.request(
+            "POST",
+            "/api/connectors/bearer",
+            json={"mcp_url": mcp_url, "display_name": display_name, "token": token},
+        )
+        return Connector.model_validate(data)
+
+    async def reauthorize(self, connector_id: int) -> ConnectorAuthorize:
+        data = await self._http.request("POST", f"/api/connectors/{connector_id}/reauthorize")
+        return ConnectorAuthorize.model_validate(data)
+
+    async def delete(self, connector_id: int) -> None:
+        await self._http.request("DELETE", f"/api/connectors/{connector_id}")
+
+
+__all__ = ["AsyncConnectors", "Connectors"]

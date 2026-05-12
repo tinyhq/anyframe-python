@@ -23,6 +23,7 @@ from .connectors import Connectors
 from .credentials import Credentials
 from .exceptions import AuthError
 from .models import User
+from .sessions import Sessions
 from .tokens import Tokens
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -109,6 +110,7 @@ class AnyFrame:
         self.credentials = Credentials(self._http)
         self.connectors = Connectors(self._http)
         self.agents = Agents(self._http)
+        self.sessions = Sessions(self._http)
 
     # ── identity ──────────────────────────────────────────────────────────
 

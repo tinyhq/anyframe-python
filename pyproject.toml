@@ -55,6 +55,9 @@ include = ["src/anyframe", "README.md", "LICENSE", "pyproject.toml"]
 testpaths = ["tests"]
 asyncio_mode = "auto"
 filterwarnings = ["error"]
+markers = [
+    "integration: hits a real AnyFrame control plane; skipped without ANYFRAME_API_KEY",
+]
 
 [tool.ruff]
 line-length = 100

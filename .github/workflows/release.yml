@@ -1,0 +1,48 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+# python-semantic-release needs write access to push the version bump commit
+# and create the GitHub release; the publish step uses OIDC for PyPI Trusted
+# Publishing (no PYPI_TOKEN secret needed).
+permissions:
+  contents: write
+  id-token: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    if: github.repository == 'tinyhq/anyframe-python'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - run: uv sync --frozen
+
+      - name: python-semantic-release
+        id: semrel
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          uv run semantic-release version
+          uv run semantic-release publish
+
+      - name: Build with uv
+        if: steps.semrel.outputs.released == 'true'
+        run: uv build
+
+      - name: Publish to PyPI (Trusted Publishing)
+        if: steps.semrel.outputs.released == 'true'
+        run: uv publish

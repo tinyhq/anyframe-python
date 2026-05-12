@@ -208,6 +208,42 @@ class Sessions:
         )
         yield from parse_sse(lines)
 
+    # ── serve (preview server) ────────────────────────────────────────────
+
+    def serve_start(self, session_id: SessionId, *, cmd: str, port: int) -> Session:
+        """Start a preview server inside the sandbox.
+
+        Args:
+            session_id: The running session to serve from.
+            cmd: Shell command to launch (e.g. ``"bun dev"``).
+            port: The port the command binds — must be in the agent's
+                ``preview_ports`` list, or the call returns 400.
+        """
+        data = self._http.request(
+            "POST",
+            f"/api/sessions/{_sid(session_id)}/serve/start",
+            json={"cmd": cmd, "port": port},
+        )
+        return Session.model_validate(data)
+
+    def serve_stop(self, session_id: SessionId) -> Session:
+        """Stop the preview server. Returns the updated session record."""
+        data = self._http.request("POST", f"/api/sessions/{_sid(session_id)}/serve/stop")
+        return Session.model_validate(data)
+
+    def serve_status(self, session_id: SessionId) -> Session:
+        """Return the live preview-server status (port + tunnel URL if up)."""
+        data = self._http.request("GET", f"/api/sessions/{_sid(session_id)}/serve/status")
+        return Session.model_validate(data)
+
+    def serve_logs(self, session_id: SessionId, *, tail: int = 200) -> dict[str, Any]:
+        """Return the last ``tail`` lines of preview-server stdout/stderr."""
+        return self._http.request(
+            "GET",
+            f"/api/sessions/{_sid(session_id)}/serve/logs",
+            params={"tail": tail},
+        )
+
 
 class AsyncSessions:
     """Async counterpart to :class:`Sessions`."""
@@ -317,6 +353,31 @@ class AsyncSessions:
         )
         async for event in parse_sse_async(lines):
             yield event
+
+    # ── serve (preview server) ────────────────────────────────────────────
+
+    async def serve_start(self, session_id: SessionId, *, cmd: str, port: int) -> Session:
+        data = await self._http.request(
+            "POST",
+            f"/api/sessions/{_sid(session_id)}/serve/start",
+            json={"cmd": cmd, "port": port},
+        )
+        return Session.model_validate(data)
+
+    async def serve_stop(self, session_id: SessionId) -> Session:
+        data = await self._http.request("POST", f"/api/sessions/{_sid(session_id)}/serve/stop")
+        return Session.model_validate(data)
+
+    async def serve_status(self, session_id: SessionId) -> Session:
+        data = await self._http.request("GET", f"/api/sessions/{_sid(session_id)}/serve/status")
+        return Session.model_validate(data)
+
+    async def serve_logs(self, session_id: SessionId, *, tail: int = 200) -> dict[str, Any]:
+        return await self._http.request(
+            "GET",
+            f"/api/sessions/{_sid(session_id)}/serve/logs",
+            params={"tail": tail},
+        )
 
 
 __all__ = ["AsyncSessions", "SessionId", "Sessions"]

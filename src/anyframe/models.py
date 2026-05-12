@@ -164,7 +164,7 @@ class AgentConnectorToggle(_Model):
 
 
 class AgentImage(_Model):
-    """A cached prebuilt Modal image for one agent build_key."""
+    """A cached prebuilt sandbox image for one agent build_key."""
 
     build_key: str
     modal_image_id: str

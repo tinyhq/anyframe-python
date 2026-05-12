@@ -1,6 +1,6 @@
 """Sessions resource — ``/api/sessions``.
 
-A session is one live Modal sandbox running an agent. The lifecycle is:
+A session is one live sandbox running an agent. The lifecycle is:
 ``booting`` → ``running`` → ``snapshotting`` → ``terminated``; resume
 re-boots from a snapshot.
 

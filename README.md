@@ -1,6 +1,6 @@
 # anyframe
 
-The official Python SDK for the [AnyFrame](https://anyfrm.com) control plane — point an agent at a repo, get a Modal sandbox running Claude Code inside.
+The official Python SDK for the [AnyFrame](https://anyfrm.com) control plane — point an agent at a repo, get a sandbox running Claude Code inside.
 
 ```
                                 ┌──────────────────────────────┐
@@ -12,7 +12,7 @@ The official Python SDK for the [AnyFrame](https://anyfrm.com) control plane —
    │   you    │ ───────────────────▶          │  build
    │ (python) │                               ▼
    └──────────┘   ┌──────────────────────────────────────────┐
-                  │ Session (Modal sandbox · chat · serve)   │
+                  │ Session (sandbox · chat · serve)         │
                   └──────────────────────────────────────────┘
 ```
 
@@ -124,7 +124,7 @@ af.agents.connectors.set(agent_id, connector_id, enabled=True)
 
 ## Builds
 
-Builds bake an agent's repo + dependencies into a cached Modal image — required before a session can boot it.
+Builds bake an agent's repo + dependencies into a cached sandbox image — required before a session can boot it.
 
 ```python
 af.agents.build(agent_id, force=False)      # queue a build
@@ -138,7 +138,7 @@ af.agents.wait_for_build(agent_id)          # blocks until succeeded / fails
 
 ## Sessions
 
-A session is one live Modal sandbox. Lifecycle is `booting → running → snapshotting → terminated`; `resume` brings a terminated session back from its snapshot.
+A session is one live sandbox. Lifecycle is `booting → running → snapshotting → terminated`; `resume` brings a terminated session back from its snapshot.
 
 ```python
 session = af.sessions.create(agent_id=agent.id, idle_timeout_s=300)

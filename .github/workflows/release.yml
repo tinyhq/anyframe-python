@@ -31,6 +31,14 @@ jobs:
 
       - run: uv sync --frozen
 
+      # Re-run the suite as a guardrail before tagging + publishing. CI also
+      # runs on this push in parallel; this is the belt to that's suspenders.
+      - name: Tests (pre-release gate)
+        run: uv run pytest -q
+
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+
       - name: python-semantic-release
         id: semrel
         env:

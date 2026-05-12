@@ -2,6 +2,7 @@
 
 from . import exceptions, models
 from ._version import __version__
+from .async_client import AsyncAnyFrame
 from .client import DEFAULT_BASE_URL, AnyFrame
 from .exceptions import (
     AnyFrameError,
@@ -48,6 +49,7 @@ __all__ = [
     "AgentSkill",
     "AnyFrame",
     "AnyFrameError",
+    "AsyncAnyFrame",
     "AuthError",
     "Build",
     "BuildQueued",

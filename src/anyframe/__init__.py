@@ -2,6 +2,7 @@
 
 from . import exceptions, models
 from ._version import __version__
+from .client import DEFAULT_BASE_URL, AnyFrame
 from .exceptions import (
     AnyFrameError,
     APIError,
@@ -37,6 +38,7 @@ from .models import (
 )
 
 __all__ = [
+    "DEFAULT_BASE_URL",
     "APIError",
     "Agent",
     "AgentConnectorToggle",
@@ -44,6 +46,7 @@ __all__ = [
     "AgentImage",
     "AgentMcp",
     "AgentSkill",
+    "AnyFrame",
     "AnyFrameError",
     "AuthError",
     "Build",

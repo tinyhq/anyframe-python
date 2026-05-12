@@ -20,6 +20,7 @@ from dotenv import load_dotenv as _dotenv_load
 from ._http import SyncHTTP
 from .exceptions import AuthError
 from .models import User
+from .tokens import Tokens
 
 if TYPE_CHECKING:  # pragma: no cover
     from types import TracebackType
@@ -99,6 +100,9 @@ class AnyFrame:
 
         logger.info("anyframe client initialised (base_url=%s)", resolved_base)
         self._http = SyncHTTP(base_url=resolved_base, api_key=resolved_key, timeout=timeout)
+
+        # ── resources ─────────────────────────────────────────────────────
+        self.tokens = Tokens(self._http)
 
     # ── identity ──────────────────────────────────────────────────────────
 

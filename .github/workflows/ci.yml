@@ -49,4 +49,13 @@ jobs:
         env:
           ANYFRAME_API_KEY: ${{ secrets.ANYFRAME_API_KEY }}
           ANYFRAME_BASE_URL: ${{ secrets.ANYFRAME_BASE_URL }}
-        run: uv run pytest -q -m integration
+        # pytest exits 5 when no tests are collected. That's our "skip"
+        # signal — it happens when the codebase has no `@pytest.mark.integration`
+        # tests yet, or when ANYFRAME_API_KEY is absent and the suite
+        # self-skips at collection time. Treat exit 5 as success; anything
+        # else is a real failure.
+        run: |
+          set +e
+          uv run pytest -q -m integration
+          code=$?
+          [ $code -eq 0 ] || [ $code -eq 5 ]

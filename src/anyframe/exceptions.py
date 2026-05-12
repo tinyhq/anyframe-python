@@ -65,8 +65,13 @@ class ValidationError(APIError):
             for plain string messages.
     """
 
-    def __init__(self, message: str = "validation failed", details: Any | None = None) -> None:
-        super().__init__(422, message)
+    def __init__(
+        self,
+        message: str = "validation failed",
+        details: Any | None = None,
+        status_code: int = 422,
+    ) -> None:
+        super().__init__(status_code, message)
         self.details = details
 
 

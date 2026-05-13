@@ -14,8 +14,10 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
+# Anchored so docs/lib/ (Slate Ruby helpers) and docs/source/javascripts/lib/
+# (Slate vendored JS) are still tracked — these are repo-root Python build artifacts.
+/lib/
+/lib64/
 parts/
 sdist/
 var/

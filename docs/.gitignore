@@ -12,10 +12,15 @@ test/tmp
 test/version_tmp
 tmp
 *.DS_STORE
+.DS_Store
 build/
 .cache
 .vagrant
 .sass-cache
+
+# Bundler install dir — gems get installed fresh at build time, never tracked.
+vendor/
+vendor/bundle/
 
 # YARD artifacts
 .yardoc

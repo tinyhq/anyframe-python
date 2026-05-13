@@ -202,8 +202,13 @@ a:hover {
       border-bottom: 1px solid $af-border;
       padding: 10px 12px;
       color: $af-text-secondary;
+      background: transparent !important; // override Slate's nth-child stripes
     }
-    tr:hover td { background: $af-surface; }
+    // Slate has a light-grey `tr:last-child{border-bottom:1px solid #ccc}` rule
+    // we need to neutralise — otherwise a pale line floats under each table.
+    tr:last-child { border-bottom: 0; }
+    tr:last-child td { border-bottom: 0; }
+    tr:hover td { background: $af-surface !important; }
   }
 
   // Blockquotes (Slate uses these as the "above command returns" hints).

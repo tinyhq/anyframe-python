@@ -254,8 +254,8 @@ af.sessions       # Live sandboxes
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `api_key` | `str \| None` | env | Personal token (`afm_...`). Falls back to `ANYFRAME_API_KEY`. |
-| `base_url` | `str \| None` | env | Control-plane URL. Falls back to `ANYFRAME_BASE_URL`, then `https://api.anyfrm.com`. |
+| `api_key` | <code>str &#124; None</code> | env | Personal token (`afm_...`). Falls back to `ANYFRAME_API_KEY`. |
+| `base_url` | <code>str &#124; None</code> | env | Control-plane URL. Falls back to `ANYFRAME_BASE_URL`, then `https://api.anyfrm.com`. |
 | `timeout` | `float` | `30.0` | Per-request timeout in seconds. |
 | `load_dotenv` | `bool` | `True` | Auto-load `.env` from the working directory before reading env vars. |
 
@@ -325,14 +325,14 @@ agent = af.agents.create(
 | Field | Type | Description |
 | --- | --- | --- |
 | `name` | `str` | Required. Human-readable label. |
-| `description` | `str \| None` | Free-text description. |
-| `system_prompt` | `str \| None` | Prefix injected into Claude's system prompt. |
-| `repo_url` | `str \| None` | `owner/name` GitHub repo. Omit for a general-purpose agent. |
-| `repo_ref` | `str \| None` | Branch / tag / SHA. Server default: `main`. |
-| `install_cmd` | `str \| None` | Shell command run during build to install deps. |
-| `serve_cmd` | `str \| None` | Preview-server command (e.g. `bun dev`). |
-| `preview_ports` | `list[int] \| None` | Ports the SDK is allowed to tunnel via `serve_start`. |
-| `permissions` | `dict \| None` | Permissions preset (see dashboard). |
+| `description` | <code>str &#124; None</code> | Free-text description. |
+| `system_prompt` | <code>str &#124; None</code> | Prefix injected into Claude's system prompt. |
+| `repo_url` | <code>str &#124; None</code> | `owner/name` GitHub repo. Omit for a general-purpose agent. |
+| `repo_ref` | <code>str &#124; None</code> | Branch / tag / SHA. Server default: `main`. |
+| `install_cmd` | <code>str &#124; None</code> | Shell command run during build to install deps. |
+| `serve_cmd` | <code>str &#124; None</code> | Preview-server command (e.g. `bun dev`). |
+| `preview_ports` | <code>list[int] &#124; None</code> | Ports the SDK is allowed to tunnel via `serve_start`. |
+| `permissions` | <code>dict &#124; None</code> | Permissions preset (see dashboard). |
 
 ## Build
 
@@ -442,7 +442,7 @@ Sessions are sandboxes. Boot one, talk to it, snapshot it, throw it away.
 | `agent_id` | `int` | — | Required. The agent to run. |
 | `idle_timeout_s` | `int` | `300` | Snapshot after this many idle seconds. |
 | `unsafe` | `bool` | `False` | Pass `--dangerously-skip-permissions` to Claude. **Leave off.** |
-| `resume_from_snapshot_id` | `int \| None` | `None` | Hydrate from a snapshot instead of booting fresh. |
+| `resume_from_snapshot_id` | <code>int &#124; None</code> | `None` | Hydrate from a snapshot instead of booting fresh. |
 
 ## Chat
 

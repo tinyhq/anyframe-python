@@ -1,10 +1,6 @@
 ---
 title: AnyFrame Python SDK
 
-language_tabs:
-  - python
-  - shell
-
 toc_footers:
   - <a href='https://anyfrm.com'>anyfrm.com</a>
   - <a href='https://discord.gg/UpkEW6JjpU'>Join the Discord →</a>

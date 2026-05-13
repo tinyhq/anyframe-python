@@ -110,9 +110,6 @@ a:hover {
 }
 
 .content {
-  // Subtle vertical rule between content and code rail.
-  border-right: 1px solid $af-border;
-
   h1, h2, h3, h4, h5, h6 {
     font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     color: $af-text;
@@ -211,20 +208,8 @@ a:hover {
     tr:hover td { background: $af-surface !important; }
   }
 
-  // Blockquotes (Slate uses these as the "above command returns" hints).
-  blockquote {
-    background: transparent;
-    border-left: 2px solid $af-border-heavy;
-    color: $af-text-muted;
-    padding: 0 0 0 14px;
-    margin: 16px 0;
-
-    & > p {
-      color: $af-text-muted;
-      font-size: 13px;
-      margin: 0;
-    }
-  }
+  // Blockquote styling lives in the single-column overrides at the bottom
+  // of this file (Slate's default treatment is incompatible with our layout).
 
   // Asides — Signal Blue / Warning / Success / Danger.
   aside {
@@ -258,86 +243,114 @@ a:hover {
   }
 }
 
-// Architecture / lifecycle diagrams. Slate floats every <pre> into the
-// right code rail (50% width); these ASCII diagrams are illustrations
-// for the prose, so they need to stay in the left content column.
+// ═══════════════════════════════════════════════════════════════════════
+// Single-column layout — overrides Slate's two-column (prose | code rail)
+// ═══════════════════════════════════════════════════════════════════════
 //
-// Authored in Markdown as: <pre class="diagram">...</pre>
-.content pre.diagram {
-  float: none !important;
-  clear: both;
+// Slate floats every <pre> and <blockquote> into a 50%-wide right rail,
+// and reserves the left 50% for prose by setting `margin-right: 50%` on
+// every prose block. That works for short balanced sections (Stripe-style
+// API ref) but creates massive vertical gaps when one column is much
+// taller than the other — which is our case. We collapse everything into
+// a single, centred column with inline code blocks.
+
+// Hide the right-rail background panel and the fixed top-right tab strip.
+.page-wrapper .dark-box,
+.page-wrapper > .lang-selector {
+  display: none !important;
+}
+
+// Stop reserving the right half of every prose block.
+.content > h1,
+.content > h2,
+.content > h3,
+.content > h4,
+.content > h5,
+.content > h6,
+.content > p,
+.content > table,
+.content > ul,
+.content > ol,
+.content > aside,
+.content > dl,
+.content > div,
+.content > pre,
+.content > blockquote {
+  margin-right: 0 !important;
+}
+
+// Code blocks become full-width inline blocks in the flow.
+.content pre,
+.content blockquote {
   width: auto !important;
-  // Match prose's 32px left padding so the diagram aligns with paragraphs.
-  margin: 28px 50% 28px 32px !important;
-  padding: 20px 24px !important;
+  float: none !important;
+  clear: both !important;
+}
+
+.content pre {
+  background: $af-surface-2 !important;
+  color: $af-text !important;
+  border: 1px solid $af-border;
+  border-radius: 8px;
+  margin: 18px 32px !important;
+  padding: 18px 22px !important;
+  font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 13px !important;
+  line-height: 1.7 !important;
+  overflow-x: auto;
+}
+
+// Blockquotes — prose callouts (used as "tip" boxes), not right-rail hints.
+.content blockquote {
+  background: $af-surface !important;
+  border: 1px solid $af-border !important;
+  border-left: 3px solid $af-border-heavy !important;
+  border-radius: 6px !important;
+  color: $af-text-secondary !important;
+  margin: 18px 32px !important;
+  padding: 12px 18px !important;
+}
+.content blockquote > p {
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  color: $af-text-secondary !important;
+  font-family: "Inter", -apple-system, sans-serif !important;
+  font-size: 14px !important;
+  text-transform: none !important;
+  letter-spacing: -0.005em !important;
+}
+
+// Centre the content column at a comfortable reading width.
+// (Page-wrapper already has margin-left: 260px for the TOC.)
+.content {
+  max-width: 880px;
+  margin: 0 auto;
+  padding-bottom: 80px;
+}
+
+// Architecture / lifecycle diagrams — full-width prose blocks, soft card.
+.content pre.diagram {
   background: $af-surface !important;
   color: $af-text-secondary !important;
   border: 1px solid $af-border;
   border-radius: 10px;
+  margin: 28px 32px !important;
+  padding: 22px 28px !important;
   font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
-  font-size: 11.5px;
+  font-size: 12px !important;
   line-height: 1.5;
   white-space: pre;
   overflow-x: auto;
   text-shadow: none;
 }
 
-// Mobile: drop the right-rail margin so diagrams use the full content width.
 @media (max-width: 670px) {
-  .content pre.diagram {
-    margin-right: 16px !important;
+  .content pre,
+  .content pre.diagram,
+  .content blockquote {
     margin-left: 16px !important;
-  }
-}
-
-// Right rail (code examples).
-.dark-box {
-  background: $af-surface;
-  color: $af-text-secondary;
-
-  pre {
-    background: $af-surface-2 !important;
-    border: 1px solid $af-border;
-    border-radius: 8px;
-    padding: 16px !important;
-    line-height: 1.7;
-  }
-  blockquote {
-    background: transparent !important;
-    color: $af-text-muted;
-
-    & > p {
-      background: transparent !important;
-      color: $af-text-muted;
-      padding: 0;
-      font-size: 12px;
-      text-transform: none;
-      font-family: "Inter", sans-serif;
-      letter-spacing: -0.005em;
-    }
-  }
-}
-
-// Language selector — pill row, monospace.
-.lang-selector {
-  background: $af-bg;
-  border-bottom: 1px solid $af-border;
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-
-  a {
-    color: $af-text-muted;
-    text-transform: uppercase;
-    font-size: 11px;
-    letter-spacing: 0.06em;
-    padding: 10px 14px;
-    border: 0;
-
-    &:active,
-    &.active {
-      background: $af-surface;
-      color: $af-brand;
-    }
-    &:hover { color: $af-text; background: $af-surface; }
+    margin-right: 16px !important;
   }
 }
 

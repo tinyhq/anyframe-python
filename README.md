@@ -220,4 +220,4 @@ MIT.
 
 ---
 
-Docs: [docs.anyfrm.com](https://docs.anyfrm.com) · Found a bug? [Open an issue](https://github.com/tinyhq/anyframe-python/issues/new) or [drop in on Discord](https://discord.gg/UpkEW6JjpU).
+Docs: [docs.anyfrm.com](https://docs.anyfrm.com) · Found a bug or have a question? [Join us on Discord](https://discord.gg/UpkEW6JjpU).

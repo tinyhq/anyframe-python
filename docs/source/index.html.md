@@ -7,7 +7,6 @@ language_tabs:
 
 toc_footers:
   - <a href='https://anyfrm.com'>anyfrm.com</a>
-  - <a href='https://github.com/tinyhq/anyframe-python'>SDK on GitHub</a>
   - <a href='https://discord.gg/UpkEW6JjpU'>Join the Discord →</a>
 
 search: true
@@ -689,8 +688,6 @@ print(anyframe.__version__)
 # When opening an issue, include the SDK version and a minimal repro.
 ```
 
-Found a bug? [Open an issue on GitHub](https://github.com/tinyhq/anyframe-python/issues/new) with the SDK version, the call that failed, and the response status.
-
-Have a question, want to share what you're building, or need a faster answer? [Join us on Discord](https://discord.gg/UpkEW6JjpU) — the team hangs out there.
+Found a bug, have a question, or want to share what you're building? [Join us on Discord](https://discord.gg/UpkEW6JjpU) — the team hangs out in `#sdk`. When reporting a bug, include the SDK version (`anyframe.__version__`), the call that failed, and the response status.
 
 For dashboard / billing / account issues, head to [anyfrm.com](https://anyfrm.com).

@@ -28,8 +28,26 @@ a:hover {
   border-right: 1px solid $af-border;
   font-feature-settings: "ss01" on;
 
-  .logo {
-    margin-bottom: $logo-margin;
+  // Text wordmark — replaces Slate's default logo image. Mono-Logo Rule:
+  // the AnyFrame mark renders only in white on dark surfaces.
+  a.logo {
+    display: block;
+    padding: 22px 18px 18px;
+    margin: 0 0 8px 0;
+    border-bottom: 1px solid $af-border;
+    color: $af-text;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    text-decoration: none;
+
+    &:hover { color: $af-text; border-bottom-color: $af-border; }
+
+    .logo-suffix {
+      color: $af-text-muted;
+      font-weight: 500;
+    }
   }
 
   // Make uppercase eyebrow text feel like our "Label" type.
@@ -108,10 +126,11 @@ a:hover {
     font-weight: 700;
     letter-spacing: -0.025em;
     line-height: 1.1;
-    margin-top: 48px;
-    margin-bottom: 16px;
-    padding-bottom: 16px;
-    border-bottom: 1px solid $af-border;
+    margin-top: 56px;
+    margin-bottom: 18px;
+    padding-bottom: 18px;
+    // Heavier than $af-border so section breaks read on the dark stage.
+    border-bottom: 1px solid $af-border-heavy;
   }
   h1:first-child,
   .h1:first-child { margin-top: 0; }

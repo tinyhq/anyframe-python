@@ -258,6 +258,38 @@ a:hover {
   }
 }
 
+// Architecture / lifecycle diagrams. Slate floats every <pre> into the
+// right code rail (50% width); these ASCII diagrams are illustrations
+// for the prose, so they need to stay in the left content column.
+//
+// Authored in Markdown as: <pre class="diagram">...</pre>
+.content pre.diagram {
+  float: none !important;
+  clear: both;
+  width: auto !important;
+  // Match prose's 32px left padding so the diagram aligns with paragraphs.
+  margin: 28px 50% 28px 32px !important;
+  padding: 20px 24px !important;
+  background: $af-surface !important;
+  color: $af-text-secondary !important;
+  border: 1px solid $af-border;
+  border-radius: 10px;
+  font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 11.5px;
+  line-height: 1.5;
+  white-space: pre;
+  overflow-x: auto;
+  text-shadow: none;
+}
+
+// Mobile: drop the right-rail margin so diagrams use the full content width.
+@media (max-width: 670px) {
+  .content pre.diagram {
+    margin-right: 16px !important;
+    margin-left: 16px !important;
+  }
+}
+
 // Right rail (code examples).
 .dark-box {
   background: $af-surface;

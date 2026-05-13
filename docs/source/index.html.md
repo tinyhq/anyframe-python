@@ -36,7 +36,7 @@ uv add anyframe
 
 This SDK is the Python entry point to the control plane. Everything visible in the dashboard is callable here: agents, sessions, builds, connectors, credentials, tokens.
 
-```
+<pre class="diagram">
             ┌──────────────────────────────────────────┐
             │  Agent (repo · system prompt · skills)   │
             │      └── MCPs · Connector toggles        │
@@ -45,7 +45,7 @@ This SDK is the Python entry point to the control plane. Everything visible in t
    └─────┘  ┌────────────────────▼─────────────────────┐
             │  Session (sandbox · chat · serve)        │
             └──────────────────────────────────────────┘
-```
+</pre>
 
 The SDK targets Python 3.10+ and ships fully typed (`py.typed`). Every sync method has an async counterpart on `AsyncAnyFrame` with the same signature.
 
@@ -195,7 +195,7 @@ Before reading the reference, six concepts:
 
 **Skill / MCP.** Per-agent capabilities. Skills are Claude Code skills (markdown + a frontmatter contract). MCPs are agent-scoped MCP servers that don't make sense to share across agents.
 
-```
+<pre class="diagram">
         ┌────────────── User scope ──────────────┐
         │   Connectors        Credentials         │
         │   (Linear, Sentry,  (Claude OAuth,      │
@@ -211,7 +211,7 @@ Before reading the reference, six concepts:
         ┌────────────── Session scope ────────────┐
         │   Sandbox · Chat · Serve · Snapshots    │
         └─────────────────────────────────────────┘
-```
+</pre>
 
 # The client
 
@@ -409,7 +409,7 @@ Sessions are sandboxes. Boot one, talk to it, snapshot it, throw it away.
 
 ## Lifecycle
 
-```
+<pre class="diagram">
                   create()
                      │
                      ▼
@@ -431,7 +431,7 @@ Sessions are sandboxes. Boot one, talk to it, snapshot it, throw it away.
               ┌─────────────┐
               │ terminated  │
               └─────────────┘
-```
+</pre>
 
 `wait_until_running` blocks until the session reaches `running` or hits a terminal non-running state. It raises `TimeoutError` if neither happens within `timeout=180.0` seconds.
 

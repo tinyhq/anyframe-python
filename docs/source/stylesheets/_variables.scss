@@ -1,102 +1,119 @@
 /*
-Copyright 2008-2013 Concur Technologies, Inc.
+  AnyFrame theme tokens for Slate.
 
-Licensed under the Apache License, Version 2.0 (the "License"); you may
-not use this file except in compliance with the License. You may obtain
-a copy of the License at
+  Maps the san-francisco design system (Stage Black / Console Surface /
+  Signal Blue) onto Slate's variable surface. Slate's defaults assume a
+  light content column with a dark sidebar — we collapse both into the
+  same dark palette so the whole page reads as one "Mission Console".
 
-  http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-License for the specific language governing permissions and limitations
-under the License.
+  Source of truth: /Users/<...>/box/san-francisco/DESIGN.md
 */
 
 
+// AnyFrame design tokens
 ////////////////////////////////////////////////////////////////////////////////
-// CUSTOMIZE SLATE
+
+$af-bg:               #0a0a0a;  // stage-black
+$af-surface:          #0d0d0d;  // console-surface
+$af-surface-2:        #111111;  // console-surface-2
+$af-border:           #1a1a1a;  // console-border
+$af-border-heavy:     #262626;  // console-border-heavy
+
+$af-text:             #ffffff;
+$af-text-secondary:   #9a9a9a;
+$af-text-muted:       #6a6a6a;
+$af-text-faint:       #3a3a3a;
+
+$af-brand:            #60a5fa;  // signal-blue
+$af-brand-hover:      #7cb3fc;
+$af-brand-subtle:     rgba(96, 165, 250, 0.08);
+
+$af-success:          #4ade80;
+$af-warning:          #fbbf24;
+$af-danger:           #f87171;
+$af-info:             #60a5fa;
+
+
+// Slate background slots
 ////////////////////////////////////////////////////////////////////////////////
-// Use these settings to help adjust the appearance of Slate
+$nav-bg:                $af-surface !default;
+$examples-bg:           $af-surface !default;
+$code-bg:               $af-surface-2 !default;
+$code-annotation-bg:    $af-bg !default;
+$nav-subitem-bg:        $af-bg !default;
+$nav-active-bg:         $af-brand-subtle !default;
+$nav-active-parent-bg:  $af-bg !default;
+$lang-select-border:    $af-border !default;
+$lang-select-bg:        $af-surface-2 !default;
+$lang-select-active-bg: $af-bg !default;
+$lang-select-pressed-bg:$af-bg !default;
+$main-bg:               $af-bg !default;
+$aside-notice-bg:       rgba(96, 165, 250, 0.10) !default;
+$aside-warning-bg:      rgba(251, 191, 36, 0.10) !default;
+$aside-success-bg:      rgba(74, 222, 128, 0.10) !default;
+$search-notice-bg:      rgba(248, 113, 113, 0.18) !default;
 
 
-// BACKGROUND COLORS
-////////////////////
-$nav-bg: #2E3336 !default;
-$examples-bg: #2E3336 !default;
-$code-bg: #1E2224 !default;
-$code-annotation-bg: #191D1F !default;
-$nav-subitem-bg: #1E2224 !default;
-$nav-active-bg: #0F75D4 !default;
-$nav-active-parent-bg: #1E2224 !default; // parent links of the current section
-$lang-select-border: #000 !default;
-$lang-select-bg: #1E2224 !default;
-$lang-select-active-bg: $examples-bg !default; // feel free to change this to blue or something
-$lang-select-pressed-bg: #111 !default; // color of language tab bg when mouse is pressed
-$main-bg: #F3F7F9 !default;
-$aside-notice-bg: #8fbcd4 !default;
-$aside-warning-bg: #c97a7e !default;
-$aside-success-bg: #6ac174 !default;
-$search-notice-bg: #c97a7e !default;
+// Slate text slots
+////////////////////////////////////////////////////////////////////////////////
+$main-text:                  $af-text !default;
+$nav-text:                   $af-text-secondary !default;
+$nav-active-text:            $af-brand !default;
+$nav-active-parent-text:     $af-text !default;
+$lang-select-text:           $af-text-secondary !default;
+$lang-select-active-text:    $af-text !default;
+$lang-select-pressed-text:   $af-text !default;
 
 
-// TEXT COLORS
-////////////////////
-$main-text: #333 !default; // main content text color
-$nav-text: #fff !default;
-$nav-active-text: #fff !default;
-$nav-active-parent-text: #fff !default; // parent links of the current section
-$lang-select-text: #fff !default; // color of unselected language tab text
-$lang-select-active-text: #fff !default; // color of selected language tab text
-$lang-select-pressed-text: #fff !default; // color of language tab text when mouse is pressed
+// Sizes — kept close to Slate defaults; tightened a touch
+////////////////////////////////////////////////////////////////////////////////
+$nav-width:        260px !default;
+$examples-width:   50% !default;
+$logo-margin:      20px !default;
+$main-padding:     32px !default;
+$nav-padding:      18px !default;
+$nav-v-padding:    10px !default;
+$nav-indent:       12px !default;
+$code-annotation-padding: 13px !default;
+$h1-margin-bottom: 24px !default;
+$tablet-width:     930px !default;
+$phone-width:      $tablet-width - $nav-width !default;
 
 
-// SIZES
-////////////////////
-$nav-width: 230px !default; // width of the navbar
-$examples-width: 50% !default; // portion of the screen taken up by code examples
-$logo-margin: 0px !default; // margin below logo
-$main-padding: 28px !default; // padding to left and right of content & examples
-$nav-padding: 15px !default; // padding to left and right of navbar
-$nav-v-padding: 10px !default; // padding used vertically around search boxes and results
-$nav-indent: 10px !default; // extra padding for ToC subitems
-$code-annotation-padding: 13px !default; // padding inside code annotations
-$h1-margin-bottom: 21px !default; // padding under the largest header tags
-$tablet-width: 930px !default; // min width before reverting to tablet size
-$phone-width: $tablet-width - $nav-width !default; // min width before reverting to mobile size
-
-
-// FONTS
-////////////////////
+// Fonts — Inter + JetBrains Mono, matching the san-francisco system.
+// Loaded via Google Fonts in source/layouts/layout.erb.
+////////////////////////////////////////////////////////////////////////////////
 %default-font {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.005em;
 }
 
 %header-font {
   @extend %default-font;
-  font-weight: bold;
+  font-weight: 600;
+  letter-spacing: -0.02em;
 }
 
 %code-font {
-  font-family: Consolas, Menlo, Monaco, "Lucida Console", "Liberation Mono", "DejaVu Sans Mono", "Bitstream Vera Sans Mono", "Courier New", monospace, serif;
-  font-size: 12px;
-  line-height: 1.5;
+  font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, Monaco, monospace;
+  font-size: 12.5px;
+  line-height: 1.7;
+  font-variant-numeric: tabular-nums;
 }
 
 
-// OTHER
-////////////////////
-$nav-footer-border-color: #666 !default;
-$search-box-border-color: #666 !default;
+// Borders
+////////////////////////////////////////////////////////////////////////////////
+$nav-footer-border-color: $af-border !default;
+$search-box-border-color: $af-border !default;
 
 
 ////////////////////////////////////////////////////////////////////////////////
 // INTERNAL
 ////////////////////////////////////////////////////////////////////////////////
-// These settings are probably best left alone.
-
 %break-words {
     word-break: break-all;
     hyphens: auto;

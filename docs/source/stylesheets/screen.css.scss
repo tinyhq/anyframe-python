@@ -635,3 +635,7 @@ html, body {
 .copy-clipboard:hover {
   opacity: 0.8;
 }
+
+// AnyFrame theme overrides — imported last so they win cascade order.
+@import 'anyframe';
+

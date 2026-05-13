@@ -1,0 +1,311 @@
+/*
+  AnyFrame fine-grained overrides on top of Slate's screen.css.
+
+  Everything here is stuff the _variables.scss surface can't express:
+  link colour, callout left-borders, search input chrome, scrollbar
+  styling, tighter radii, header weights. Kept narrow on purpose — if
+  it can live in _variables.scss, it should live there.
+*/
+
+@import 'variables';
+
+
+// Link colour — Signal Blue, the one accent.
+a,
+a:visited {
+  color: $af-brand;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 120ms ease, color 120ms ease;
+}
+a:hover {
+  color: $af-brand-hover;
+  border-bottom-color: $af-brand-hover;
+}
+
+// TOC: brand-tinted active state, no left bar.
+.toc-wrapper {
+  border-right: 1px solid $af-border;
+  font-feature-settings: "ss01" on;
+
+  .logo {
+    margin-bottom: $logo-margin;
+  }
+
+  // Make uppercase eyebrow text feel like our "Label" type.
+  .toc-h1.toc-link,
+  .toc-h2.toc-link {
+    font-weight: 500;
+    letter-spacing: -0.005em;
+  }
+
+  .toc-link.active {
+    color: $af-brand !important;
+    background: $af-brand-subtle;
+    box-shadow: inset 2px 0 0 0 $af-brand;
+  }
+
+  .toc-list-h2 {
+    background: $af-bg;
+  }
+
+  .toc-footer {
+    border-top: 1px solid $af-border;
+
+    a {
+      color: $af-text-muted;
+      &:hover { color: $af-text; }
+    }
+  }
+}
+
+// Search input — flat dark, brand focus ring.
+.search input {
+  background: $af-bg;
+  border: 1px solid $af-border;
+  border-radius: 6px;
+  color: $af-text;
+  padding: 8px 12px;
+  font-family: inherit;
+  font-size: 13px;
+
+  &::placeholder { color: $af-text-muted; }
+  &:focus {
+    outline: none;
+    border-color: $af-brand;
+    box-shadow: 0 0 0 3px $af-brand-subtle;
+  }
+}
+.search-results {
+  background: $af-surface-2;
+  border-top: 1px solid $af-border;
+
+  li a {
+    color: $af-text-secondary;
+    &:hover { color: $af-brand; background: $af-brand-subtle; }
+  }
+}
+
+// Content column.
+.page-wrapper {
+  background: $af-bg;
+}
+
+.content {
+  // Subtle vertical rule between content and code rail.
+  border-right: 1px solid $af-border;
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: $af-text;
+    border: 0;
+    background: transparent;
+    text-shadow: none;
+  }
+
+  h1 {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+    margin-top: 48px;
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid $af-border;
+  }
+  h1:first-child,
+  .h1:first-child { margin-top: 0; }
+
+  h2 {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    margin-top: 40px;
+    padding-top: 0;
+    border-top: 0;
+  }
+  h3 {
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    color: $af-text;
+    margin-top: 28px;
+  }
+  h4, h5, h6 {
+    font-size: 14px;
+    font-weight: 600;
+    color: $af-text-secondary;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    margin-top: 20px;
+  }
+
+  p, li, dt, dd { color: $af-text-secondary; }
+  p strong, li strong { color: $af-text; }
+
+  // Inline code — pill on a darker tone, no border.
+  code {
+    background: $af-surface-2;
+    color: $af-text;
+    border: 1px solid $af-border;
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 12.5px;
+  }
+  pre code {
+    border: 0;
+    padding: 0;
+    background: transparent;
+  }
+
+  // Tables — terminal-tight.
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 16px 0;
+    font-size: 13px;
+
+    th {
+      background: $af-surface-2;
+      color: $af-text;
+      border-bottom: 1px solid $af-border-heavy;
+      padding: 10px 12px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-family: "JetBrains Mono", ui-monospace, monospace;
+    }
+    td {
+      border-bottom: 1px solid $af-border;
+      padding: 10px 12px;
+      color: $af-text-secondary;
+    }
+    tr:hover td { background: $af-surface; }
+  }
+
+  // Blockquotes (Slate uses these as the "above command returns" hints).
+  blockquote {
+    background: transparent;
+    border-left: 2px solid $af-border-heavy;
+    color: $af-text-muted;
+    padding: 0 0 0 14px;
+    margin: 16px 0;
+
+    & > p {
+      color: $af-text-muted;
+      font-size: 13px;
+      margin: 0;
+    }
+  }
+
+  // Asides — Signal Blue / Warning / Success / Danger.
+  aside {
+    border-radius: 8px;
+    border: 1px solid $af-border;
+    padding: 14px 18px;
+    color: $af-text-secondary;
+    background: $af-surface;
+
+    a { color: $af-brand; }
+
+    &.notice {
+      border-left: 3px solid $af-info;
+      background: rgba(96, 165, 250, 0.06);
+    }
+    &.warning {
+      border-left: 3px solid $af-warning;
+      background: rgba(251, 191, 36, 0.06);
+    }
+    &.success {
+      border-left: 3px solid $af-success;
+      background: rgba(74, 222, 128, 0.06);
+    }
+  }
+
+  // hr — barely-there divider.
+  hr {
+    border: 0;
+    border-top: 1px solid $af-border;
+    margin: 32px 0;
+  }
+}
+
+// Right rail (code examples).
+.dark-box {
+  background: $af-surface;
+  color: $af-text-secondary;
+
+  pre {
+    background: $af-surface-2 !important;
+    border: 1px solid $af-border;
+    border-radius: 8px;
+    padding: 16px !important;
+    line-height: 1.7;
+  }
+  blockquote {
+    background: transparent !important;
+    color: $af-text-muted;
+
+    & > p {
+      background: transparent !important;
+      color: $af-text-muted;
+      padding: 0;
+      font-size: 12px;
+      text-transform: none;
+      font-family: "Inter", sans-serif;
+      letter-spacing: -0.005em;
+    }
+  }
+}
+
+// Language selector — pill row, monospace.
+.lang-selector {
+  background: $af-bg;
+  border-bottom: 1px solid $af-border;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+
+  a {
+    color: $af-text-muted;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    padding: 10px 14px;
+    border: 0;
+
+    &:active,
+    &.active {
+      background: $af-surface;
+      color: $af-brand;
+    }
+    &:hover { color: $af-text; background: $af-surface; }
+  }
+}
+
+// "NAV" mobile toggle.
+#nav-button {
+  background: $af-surface;
+  border: 1px solid $af-border;
+  border-radius: 8px;
+  color: $af-text;
+  span { color: $af-text; }
+}
+
+// Copy-code button (Slate adds .copy-clipboard).
+.copy-clipboard {
+  filter: invert(0.7);
+  opacity: 0.6;
+  &:hover { opacity: 1; }
+}
+
+// Subtle scrollbars (WebKit only).
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: $af-bg; }
+::-webkit-scrollbar-thumb {
+  background: $af-border-heavy;
+  border-radius: 8px;
+  &:hover { background: $af-text-faint; }
+}

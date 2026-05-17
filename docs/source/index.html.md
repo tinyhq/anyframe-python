@@ -796,11 +796,11 @@ Use it when:
 - You're inside an existing `asyncio` event loop (FastAPI, aiohttp, etc.).
 - You need to fan out many calls in parallel - `asyncio.gather()` over `AsyncAnyFrame` calls is the right primitive.
 
-# Help
+# Configuration
 
-Settings reference, error taxonomy, and where to ask when something doesn't add up.
+Every env var, constructor kwarg, and default the SDK reads — in one place.
 
-## Configuration reference
+## Settings
 
 | Env var | Constructor kwarg | Default | Purpose |
 | --- | --- | --- | --- |
@@ -810,12 +810,18 @@ Settings reference, error taxonomy, and where to ask when something doesn't add 
 | - | `timeout` | `30.0` | Per-request seconds. |
 | - | `load_dotenv` | `True` | Auto-load `.env` from cwd. |
 
+## Logging
+
 ```python
 import logging
 logging.getLogger("anyframe").setLevel(logging.DEBUG)
 ```
 
 The SDK logs under the `anyframe` logger. Set `ANYFRAME_LOG_LEVEL=DEBUG` for one-line traces of every request (method, path, status, elapsed ms).
+
+# Errors & support
+
+The exception tree the SDK raises, plus where to ask when something goes sideways.
 
 ## Errors
 

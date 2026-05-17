@@ -147,9 +147,7 @@ class Sessions:
         will warm-hydrate from the resulting snapshot. Overwrites any prior
         warmup image — setup sessions can re-promote multiple times.
         """
-        data = self._http.request(
-            "POST", f"/api/sessions/{_sid(session_id)}/save-as-base"
-        )
+        data = self._http.request("POST", f"/api/sessions/{_sid(session_id)}/save-as-base")
         return SaveAsBaseResult.model_validate(data)
 
     def wait_until_running(
@@ -395,9 +393,7 @@ class AsyncSessions:
         return [Snapshot.model_validate(row) for row in data]
 
     async def save_as_base(self, session_id: SessionId) -> SaveAsBaseResult:
-        data = await self._http.request(
-            "POST", f"/api/sessions/{_sid(session_id)}/save-as-base"
-        )
+        data = await self._http.request("POST", f"/api/sessions/{_sid(session_id)}/save-as-base")
         return SaveAsBaseResult.model_validate(data)
 
     async def wait_until_running(

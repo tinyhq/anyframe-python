@@ -28,9 +28,7 @@ ConnectorAuthKind = Literal["oauth_dcr", "oauth_preregistered", "bearer_token"]
 PermissionPreset = Literal["read_only", "standard", "full_trust"]
 BuildState = Literal["queued", "running", "succeeded", "failed", "cancelled"]
 Runtime = Literal["claude", "codex"]
-CatalogSetupKind = Literal[
-    "oauth_dcr", "oauth_preregistered", "bearer_token", "custom_mcp"
-]
+CatalogSetupKind = Literal["oauth_dcr", "oauth_preregistered", "bearer_token", "custom_mcp"]
 CatalogTrustLevel = Literal["official", "verified", "community"]
 
 

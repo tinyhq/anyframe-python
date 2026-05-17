@@ -60,16 +60,12 @@ def test_attention_list_returns_typed_union(client):
 
 @respx.mock
 def test_attention_list_passes_limit(client):
-    route = respx.get(f"{BASE_URL}/api/attention").mock(
-        return_value=httpx.Response(200, json=[])
-    )
+    route = respx.get(f"{BASE_URL}/api/attention").mock(return_value=httpx.Response(200, json=[]))
     client.attention.list(limit=5)
     assert route.calls.last.request.url.params["limit"] == "5"
 
 
 @respx.mock
 def test_attention_empty_list_is_ok(client):
-    respx.get(f"{BASE_URL}/api/attention").mock(
-        return_value=httpx.Response(200, json=[])
-    )
+    respx.get(f"{BASE_URL}/api/attention").mock(return_value=httpx.Response(200, json=[]))
     assert client.attention.list() == []

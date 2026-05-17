@@ -56,9 +56,7 @@ class Attention:
             limit: Maximum items to return. Server clamps to ``[1, 100]``;
                 defaults to 20 (matching the API).
         """
-        data = self._http.request(
-            "GET", "/api/attention", params={"limit": limit}
-        )
+        data = self._http.request("GET", "/api/attention", params={"limit": limit})
         return [_parse_item(row) for row in data]
 
 
@@ -69,9 +67,7 @@ class AsyncAttention:
         self._http = http
 
     async def list(self, *, limit: int = 20) -> builtins.list[AttentionItem]:
-        data = await self._http.request(
-            "GET", "/api/attention", params={"limit": limit}
-        )
+        data = await self._http.request("GET", "/api/attention", params={"limit": limit})
         return [_parse_item(row) for row in data]
 
 

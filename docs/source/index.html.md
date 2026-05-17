@@ -106,6 +106,35 @@ The SDK ships with PEP 561 typing markers (`py.typed`), so `mypy` and `pyright` 
 | pydantic | `>= 2.6` |
 | python-dotenv | `>= 1.0` |
 
+# Get an API key
+
+```shell
+# 1. Sign in at https://anyfrm.com
+# 2. Dashboard → Settings → API keys → Create key
+# 3. Copy the afm_... token (shown once)
+# 4. Save it to .env next to your script:
+echo 'ANYFRAME_API_KEY=afm_...' >> .env
+```
+
+```python
+# Already authed in another script? Mint a new key programmatically:
+created = af.tokens.create(name="ci-bot")
+print(created.token)   # afm_...  one-time
+```
+
+The SDK authenticates with a personal API token (prefix `afm_`). You need one before any other call works.
+
+1. Sign in at [anyfrm.com](https://anyfrm.com).
+2. Open **Dashboard → Settings → API keys** and click **Create key**.
+3. Copy the `afm_...` token. The dashboard only shows it once - store it now.
+4. Drop it into a `.env` file next to your script, or export it as `ANYFRAME_API_KEY`.
+
+Already authed in another script? `af.tokens.create(name=...)` returns a fresh token (see [Tokens](#tokens)).
+
+<aside class="notice">
+<strong>Working with private repos?</strong> The control plane also needs a GitHub PAT. Set it once in the dashboard's Credentials page, or call <code>af.credentials.set_github("ghp_...")</code>. See <a href="#credentials">Credentials</a>.
+</aside>
+
 # Authentication
 
 ```python
@@ -125,7 +154,7 @@ ANYFRAME_BASE_URL=https://api.anyfrm.com   # optional
 ANYFRAME_LOG_LEVEL=INFO                    # set DEBUG for request tracing
 ```
 
-The SDK authenticates with a personal API token (prefix `afm_`). Mint one in the [dashboard](https://anyfrm.com), or programmatically from a logged-in session with `af.tokens.create(name=...)`.
+The SDK authenticates with a personal API token (prefix `afm_`). See [Get an API key](#get-an-api-key) for where the token comes from.
 
 Resolution order:
 

@@ -26,6 +26,23 @@ User-level **Connectors** plug MCP servers (Linear, Sentry, …) in once and tog
 uv add anyframe
 ```
 
+## Get an API key
+
+The SDK authenticates with a personal API token (prefix `afm_`).
+
+1. Sign in at [anyfrm.com](https://anyfrm.com).
+2. Open **Dashboard → Settings → API keys** and click **Create key**.
+3. Copy the `afm_...` token (shown once - store it now).
+4. Drop it into a `.env` next to your script, or export it:
+
+   ```bash
+   ANYFRAME_API_KEY=afm_...
+   ```
+
+Already authed in another script? `af.tokens.create(name="ci-bot")` mints a new one programmatically.
+
+Working with **private repos**? Also set a GitHub PAT once - in the dashboard's Credentials page, or via `af.credentials.set_github("ghp_...")`. See [Credentials](#credentials).
+
 ## Quickstart
 
 ```python
@@ -52,7 +69,7 @@ ANYFRAME_BASE_URL=https://api.anyfrm.com   # optional
 ANYFRAME_LOG_LEVEL=INFO                    # set DEBUG for request tracing
 ```
 
-Mint a key in the dashboard, or from a logged-in session with `af.tokens.create(name=...)`.
+See [Get an API key](#get-an-api-key) for where the `afm_...` token comes from.
 
 ## Async
 

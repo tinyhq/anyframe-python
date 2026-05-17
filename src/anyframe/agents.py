@@ -30,6 +30,7 @@ from .models import (
     BuildStatus,
     LogUrl,
     McpTransport,
+    Runtime,
     SkillSource,
 )
 
@@ -195,19 +196,24 @@ class Agents:
         name: str,
         description: str | None = None,
         system_prompt: str | None = None,
+        runtime: Runtime | None = None,
         repo_url: str | None = None,
         repo_ref: str | None = None,
         install_cmd: str | None = None,
         serve_cmd: str | None = None,
         preview_ports: builtins.list[int] | None = None,
         permissions: dict[str, Any] | None = None,
+        env_vars: dict[str, str] | None = None,
     ) -> Agent:
         """Create a new agent.
 
         Args:
             name: Human-readable agent name.
             description: Optional free-text description.
-            system_prompt: Optional system prompt prefix sent to Claude.
+            system_prompt: Optional system prompt prefix sent to the runtime.
+            runtime: Which coding-agent runtime drives this agent's sandboxes
+                (``"claude"`` or ``"codex"``). Defaults server-side to
+                ``"claude"``.
             repo_url: GitHub ``owner/name``. Omit for a general-purpose agent
                 with no repo bound.
             repo_ref: Branch / tag / SHA. Defaults server-side to ``main``.
@@ -215,6 +221,9 @@ class Agents:
             serve_cmd: Optional preview-server command (e.g. ``bun dev``).
             preview_ports: Ports to expose for preview tunnels.
             permissions: Permissions config — see the dashboard for presets.
+            env_vars: Env vars injected into every session. Keys must match
+                ``[A-Z_][A-Z0-9_]*``; values are encrypted at rest and masked
+                in responses.
 
         Returns:
             The newly created agent record.
@@ -224,12 +233,14 @@ class Agents:
                 "name": name,
                 "description": description,
                 "system_prompt": system_prompt,
+                "runtime": runtime,
                 "repo_url": repo_url,
                 "repo_ref": repo_ref,
                 "install_cmd": install_cmd,
                 "serve_cmd": serve_cmd,
                 "preview_ports": preview_ports,
                 "permissions": permissions,
+                "env_vars": env_vars,
             }
         )
         data = self._http.request("POST", "/api/agents", json=body)
@@ -475,24 +486,28 @@ class AsyncAgents:
         name: str,
         description: str | None = None,
         system_prompt: str | None = None,
+        runtime: Runtime | None = None,
         repo_url: str | None = None,
         repo_ref: str | None = None,
         install_cmd: str | None = None,
         serve_cmd: str | None = None,
         preview_ports: builtins.list[int] | None = None,
         permissions: dict[str, Any] | None = None,
+        env_vars: dict[str, str] | None = None,
     ) -> Agent:
         body = _prune(
             {
                 "name": name,
                 "description": description,
                 "system_prompt": system_prompt,
+                "runtime": runtime,
                 "repo_url": repo_url,
                 "repo_ref": repo_ref,
                 "install_cmd": install_cmd,
                 "serve_cmd": serve_cmd,
                 "preview_ports": preview_ports,
                 "permissions": permissions,
+                "env_vars": env_vars,
             }
         )
         data = await self._http.request("POST", "/api/agents", json=body)

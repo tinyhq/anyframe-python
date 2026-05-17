@@ -14,7 +14,7 @@ from tests.conftest import BASE_URL
 SKILL = {
     "id": 1,
     "name": "deploy",
-    "source": "builtin",
+    "source": "inline",
     "content": {},
     "enabled": True,
     "created_at": "2025-01-01T00:00:00Z",
@@ -58,10 +58,10 @@ def test_skills_create(client):
         return_value=httpx.Response(201, json=SKILL)
     )
     skill = client.agents.skills.create(
-        7, name="deploy", source="builtin", content={"x": 1}, enabled=False
+        7, name="deploy", source="inline", content={"x": 1}, enabled=False
     )
     body = json.loads(route.calls.last.request.read())
-    assert body == {"name": "deploy", "source": "builtin", "content": {"x": 1}, "enabled": False}
+    assert body == {"name": "deploy", "source": "inline", "content": {"x": 1}, "enabled": False}
     assert skill.name == "deploy"
 
 

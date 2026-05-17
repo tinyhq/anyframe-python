@@ -12,6 +12,11 @@ Two auth flows are supported:
   - **Bearer paste**: skip discovery and call :meth:`Connectors.create_bearer`
     with a pre-issued token, for MCP servers that don't speak OAuth.
 
+There is also a curated **catalog** of connectors the control plane ships
+with — Linear, Sentry, Google, etc. Use :meth:`Connectors.list_catalog` to
+list them and :meth:`Connectors.install_catalog_oauth` /
+:meth:`Connectors.install_catalog_bearer` to install one by slug.
+
 If a refresh hard-fails (provider revoked the app, etc.) you can rerun the
 OAuth dance with :meth:`Connectors.reauthorize` without losing the existing
 connector row or per-agent toggles.
@@ -19,9 +24,15 @@ connector row or per-agent toggles.
 
 from __future__ import annotations
 
+import builtins
 from typing import TYPE_CHECKING
 
-from .models import Connector, ConnectorAuthorize, ConnectorDiscovery
+from .models import (
+    Connector,
+    ConnectorAuthorize,
+    ConnectorCatalogItem,
+    ConnectorDiscovery,
+)
 
 if TYPE_CHECKING:  # pragma: no cover
     from ._http import AsyncHTTP, SyncHTTP
@@ -33,10 +44,20 @@ class Connectors:
     def __init__(self, http: SyncHTTP) -> None:
         self._http = http
 
-    def list(self) -> list[Connector]:
+    def list(self) -> builtins.list[Connector]:
         """Return every connector the user has set up."""
         data = self._http.request("GET", "/api/connectors")
         return [Connector.model_validate(row) for row in data]
+
+    def list_catalog(self) -> builtins.list[ConnectorCatalogItem]:
+        """Return the curated catalog of installable connectors.
+
+        Each entry carries an ``installed`` flag (and the existing
+        ``connector_id`` when installed) so callers can render install /
+        manage states without a second lookup.
+        """
+        data = self._http.request("GET", "/api/connectors/catalog")
+        return [ConnectorCatalogItem.model_validate(row) for row in data]
 
     def discover(self, mcp_url: str) -> ConnectorDiscovery:
         """Probe an MCP URL for OAuth metadata and DCR support.
@@ -52,7 +73,13 @@ class Connectors:
         data = self._http.request("POST", "/api/connectors/discover", json={"mcp_url": mcp_url})
         return ConnectorDiscovery.model_validate(data)
 
-    def create_oauth(self, *, mcp_url: str, display_name: str) -> ConnectorAuthorize:
+    def create_oauth(
+        self,
+        *,
+        mcp_url: str,
+        display_name: str,
+        default_enabled: bool = True,
+    ) -> ConnectorAuthorize:
         """Register a new OAuth-flow connector and return an ``authorize_url``.
 
         Open the URL in a browser; on success the server stores tokens and
@@ -61,16 +88,50 @@ class Connectors:
         data = self._http.request(
             "POST",
             "/api/connectors/oauth",
-            json={"mcp_url": mcp_url, "display_name": display_name},
+            json={
+                "mcp_url": mcp_url,
+                "display_name": display_name,
+                "default_enabled": default_enabled,
+            },
         )
         return ConnectorAuthorize.model_validate(data)
 
-    def create_bearer(self, *, mcp_url: str, display_name: str, token: str) -> Connector:
+    def create_bearer(
+        self,
+        *,
+        mcp_url: str,
+        display_name: str,
+        token: str,
+        default_enabled: bool = True,
+    ) -> Connector:
         """Create a bearer-token connector with a pre-issued token."""
         data = self._http.request(
             "POST",
             "/api/connectors/bearer",
-            json={"mcp_url": mcp_url, "display_name": display_name, "token": token},
+            json={
+                "mcp_url": mcp_url,
+                "display_name": display_name,
+                "token": token,
+                "default_enabled": default_enabled,
+            },
+        )
+        return Connector.model_validate(data)
+
+    def install_catalog_oauth(self, slug: str) -> ConnectorAuthorize:
+        """Install a catalog connector that uses OAuth (DCR or pre-registered).
+
+        The catalog entry supplies the MCP URL and display name; only the
+        slug is needed. Returns an ``authorize_url`` to open in a browser.
+        """
+        data = self._http.request("POST", f"/api/connectors/catalog/{slug}/oauth")
+        return ConnectorAuthorize.model_validate(data)
+
+    def install_catalog_bearer(self, slug: str, *, token: str) -> Connector:
+        """Install a catalog connector that authenticates with a bearer token."""
+        data = self._http.request(
+            "POST",
+            f"/api/connectors/catalog/{slug}/bearer",
+            json={"token": token},
         )
         return Connector.model_validate(data)
 
@@ -95,9 +156,13 @@ class AsyncConnectors:
     def __init__(self, http: AsyncHTTP) -> None:
         self._http = http
 
-    async def list(self) -> list[Connector]:
+    async def list(self) -> builtins.list[Connector]:
         data = await self._http.request("GET", "/api/connectors")
         return [Connector.model_validate(row) for row in data]
+
+    async def list_catalog(self) -> builtins.list[ConnectorCatalogItem]:
+        data = await self._http.request("GET", "/api/connectors/catalog")
+        return [ConnectorCatalogItem.model_validate(row) for row in data]
 
     async def discover(self, mcp_url: str) -> ConnectorDiscovery:
         data = await self._http.request(
@@ -105,19 +170,53 @@ class AsyncConnectors:
         )
         return ConnectorDiscovery.model_validate(data)
 
-    async def create_oauth(self, *, mcp_url: str, display_name: str) -> ConnectorAuthorize:
+    async def create_oauth(
+        self,
+        *,
+        mcp_url: str,
+        display_name: str,
+        default_enabled: bool = True,
+    ) -> ConnectorAuthorize:
         data = await self._http.request(
             "POST",
             "/api/connectors/oauth",
-            json={"mcp_url": mcp_url, "display_name": display_name},
+            json={
+                "mcp_url": mcp_url,
+                "display_name": display_name,
+                "default_enabled": default_enabled,
+            },
         )
         return ConnectorAuthorize.model_validate(data)
 
-    async def create_bearer(self, *, mcp_url: str, display_name: str, token: str) -> Connector:
+    async def create_bearer(
+        self,
+        *,
+        mcp_url: str,
+        display_name: str,
+        token: str,
+        default_enabled: bool = True,
+    ) -> Connector:
         data = await self._http.request(
             "POST",
             "/api/connectors/bearer",
-            json={"mcp_url": mcp_url, "display_name": display_name, "token": token},
+            json={
+                "mcp_url": mcp_url,
+                "display_name": display_name,
+                "token": token,
+                "default_enabled": default_enabled,
+            },
+        )
+        return Connector.model_validate(data)
+
+    async def install_catalog_oauth(self, slug: str) -> ConnectorAuthorize:
+        data = await self._http.request("POST", f"/api/connectors/catalog/{slug}/oauth")
+        return ConnectorAuthorize.model_validate(data)
+
+    async def install_catalog_bearer(self, slug: str, *, token: str) -> Connector:
+        data = await self._http.request(
+            "POST",
+            f"/api/connectors/catalog/{slug}/bearer",
+            json={"token": token},
         )
         return Connector.model_validate(data)
 

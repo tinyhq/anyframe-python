@@ -71,7 +71,11 @@ def test_create_oauth_returns_authorize_url(client):
     out = client.connectors.create_oauth(mcp_url="https://mcp.example.com", display_name="Example")
     assert "authorize" in out.authorize_url
     body = json.loads(route.calls.last.request.read())
-    assert body == {"mcp_url": "https://mcp.example.com", "display_name": "Example"}
+    assert body == {
+        "mcp_url": "https://mcp.example.com",
+        "display_name": "Example",
+        "default_enabled": True,
+    }
 
 
 @respx.mock

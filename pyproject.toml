@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "anyframe"
-version = "1.1.0"
+version = "1.0.0"
 description = "Official Python SDK for the AnyFrame control plane."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -31,8 +31,10 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://anyfrm.com"
+Documentation = "https://docs.anyfrm.com"
 Repository = "https://github.com/tinyhq/anyframe-python"
 Issues = "https://github.com/tinyhq/anyframe-python/issues"
+Changelog = "https://github.com/tinyhq/anyframe-python/blob/main/CHANGELOG.md"
 
 [dependency-groups]
 dev = [

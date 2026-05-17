@@ -63,8 +63,37 @@ a:hover {
     box-shadow: inset 2px 0 0 0 $af-brand;
   }
 
+  // Keep every category's H2 sublist expanded all the time, like uv docs.
+  // Without this the sublists are display:none until a scroll-driven JS
+  // pass flips them on — which both hid the site map and caused the
+  // "can't click Setup" issue (items moved mid-animation).
   .toc-list-h2 {
     background: $af-bg;
+    display: block !important;
+  }
+
+  // Compact, muted H2 items so the eye still groups them under their H1.
+  .toc-h2.toc-link {
+    font-size: 12px;
+    line-height: 24px;
+    color: $af-text-muted;
+    padding-left: 30px;
+
+    &:hover { color: $af-text-secondary; }
+    &.active { color: $af-brand !important; }
+  }
+
+  // Tighten the H1 row so the whole nav fits without scroll thrash.
+  .toc-h1.toc-link {
+    line-height: 30px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+  }
+
+  // Subtle gap between category groups (the spacing is whatever Slate
+  // gives <li>; we add a touch of top padding to the next group's link).
+  .toc-list-h1 > li + li > .toc-h1.toc-link {
+    margin-top: 14px;
   }
 
   .toc-footer {

@@ -75,8 +75,12 @@
         $best.addClass("active");
         $best.parents(tocListSelector).addClass("active").siblings(tocLinkSelector).addClass('active-parent');
         $best.siblings(tocListSelector).addClass("active");
-        $toc.find(tocListSelector).filter(":not(.active)").slideUp(150);
-        $toc.find(tocListSelector).filter(".active").slideDown(150);
+        // Slate's default would slideUp/slideDown the H2 sublists so only the
+        // active category expands. We want every category expanded all the
+        // time (uv-docs style) so the whole site map is visible — and so
+        // mid-flight animations never re-arrange items under the cursor,
+        // which was making links unclickable.
+        $toc.find(tocListSelector).show();
         if (window.history.replaceState) {
           window.history.replaceState(null, "", best);
         }

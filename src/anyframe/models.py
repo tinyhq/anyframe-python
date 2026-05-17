@@ -18,12 +18,20 @@ from pydantic import BaseModel, ConfigDict, Field
 # ── Aliased literal types ──────────────────────────────────────────────────
 
 SessionStatus = Literal["booting", "running", "snapshotting", "terminated", "error"]
-ServeStatus = Literal["stopped", "starting", "running", "error"]
+PreviewStatus = Literal["starting", "running", "paused", "stopped", "error"]
+# ``ServeStatus`` retained as a backwards-compatible alias for legacy
+# imports — the live preview surface has moved to :data:`PreviewStatus`.
+ServeStatus = PreviewStatus
 McpTransport = Literal["http", "sse", "stdio"]
-SkillSource = Literal["builtin", "custom"]
-ConnectorAuthKind = Literal["oauth_dcr", "bearer_token"]
+SkillSource = Literal["inline", "git"]
+ConnectorAuthKind = Literal["oauth_dcr", "oauth_preregistered", "bearer_token"]
 PermissionPreset = Literal["read_only", "standard", "full_trust"]
 BuildState = Literal["queued", "running", "succeeded", "failed", "cancelled"]
+Runtime = Literal["claude", "codex"]
+CatalogSetupKind = Literal[
+    "oauth_dcr", "oauth_preregistered", "bearer_token", "custom_mcp"
+]
+CatalogTrustLevel = Literal["official", "verified", "community"]
 
 
 class _Model(BaseModel):
@@ -72,7 +80,7 @@ class TokenCreated(Token):
 
 
 class CredentialPart(_Model):
-    """Whether a specific credential (Claude / GitHub) is set."""
+    """Whether a specific credential (Claude / Codex / GitHub) is set."""
 
     set: bool
     last4: str | None = None
@@ -83,6 +91,9 @@ class Credentials(_Model):
     """A user's stored secrets — never the raw values, only redacted metadata."""
 
     claude: CredentialPart
+    # ``codex`` was added when the control plane gained the OpenAI Codex
+    # runtime. Defaulted so older servers that don't return the key still parse.
+    codex: CredentialPart = Field(default_factory=lambda: CredentialPart(set=False))
     github: CredentialPart
 
 
@@ -95,6 +106,9 @@ class Connector(_Model):
     id: int
     display_name: str
     mcp_url: str
+    # Catalog slug when the connector was installed from the catalog, else None.
+    catalog_slug: str | None = None
+    default_enabled: bool = True
     transport: McpTransport
     auth_kind: ConnectorAuthKind
     secret_last4: str | None = None
@@ -124,6 +138,27 @@ class ConnectorAuthorize(_Model):
     connector_id: int
     authorize_url: str
     state: str
+
+
+class ConnectorCatalogItem(_Model):
+    """One entry from the connector catalog (``GET /api/connectors/catalog``)."""
+
+    slug: str
+    display_name: str
+    category: str
+    description: str
+    mcp_url: str
+    transport: McpTransport
+    setup_kind: CatalogSetupKind
+    publisher: str
+    trust_level: CatalogTrustLevel
+    docs_url: str
+    tags: list[str] = Field(default_factory=list)
+    has_logo: bool = False
+    coming_soon: bool = False
+    installed: bool = False
+    connector_id: int | None = None
+    is_authorized: bool | None = None
 
 
 # ── Agents and sub-resources ───────────────────────────────────────────────
@@ -178,6 +213,7 @@ class Agent(_Model):
     name: str
     description: str | None = None
     system_prompt: str | None = None
+    runtime: Runtime = "claude"
     repo_url: str | None = None
     repo_ref: str | None = None
     install_cmd: str | None = None
@@ -185,6 +221,11 @@ class Agent(_Model):
     preview_ports: list[int] = Field(default_factory=list)
     build_key: str | None = None
     permissions: dict[str, Any] = Field(default_factory=dict)
+    # Values are always masked ("****") in API responses; only the keys are
+    # meaningful client-side. Set via ``env_vars=`` on ``agents.create()`` /
+    # ``agents.update()``.
+    env_vars: dict[str, str] = Field(default_factory=dict)
+    warmup_image_id: str | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -242,7 +283,56 @@ class LogUrl(_Model):
     expires_in: int
 
 
-# ── Sessions, snapshots, chat ──────────────────────────────────────────────
+# ── Sessions, snapshots, chat, previews ────────────────────────────────────
+
+
+class Preview(_Model):
+    """One row in a session's live previews list."""
+
+    port: int
+    name: str
+    cmd: str | None = None
+    status: PreviewStatus
+    url: str | None = None
+    started_at: float | None = None
+    exit_code: int | None = None
+
+
+class PreviewSpec(_Model):
+    """Spec for a single preview to start (used by ``batch_start``)."""
+
+    cmd: str
+    port: int | None = None
+    name: str | None = None
+
+
+class PreviewActionResult(_Model):
+    """Generic result for non-list preview actions (start / stop / logs / …)."""
+
+    ok: bool
+    port: int | None = None
+    name: str | None = None
+    url: str | None = None
+    status: PreviewStatus | None = None
+    restart_pending: bool = False
+    already_open: bool = False
+    error: str | None = None
+
+
+class PreviewBatchResult(_Model):
+    """Result for the ``batch_start`` preview action."""
+
+    ok: bool
+    restart_pending: bool = False
+    previews: list[Preview] = Field(default_factory=list)
+    error: str | None = None
+
+
+class SaveAsBaseResult(_Model):
+    """Result of ``POST /api/sessions/{id}/save-as-base``."""
+
+    warmup_image_id: str
+    warmup_inputs_hash: str
 
 
 class Session(_Model):
@@ -255,9 +345,10 @@ class Session(_Model):
     sandbox_url: str | None = None
     snapshot_image_id: str | None = None
     idle_timeout_s: int
-    serve_status: ServeStatus
-    serve_port: int | None = None
-    serve_url: str | None = None
+    # ``previews`` replaces the older serve_status/serve_port/serve_url triple.
+    # Defaults to an empty list so a session with no preview yet still parses.
+    previews: list[Preview] = Field(default_factory=list)
+    is_setup_session: bool = False
     created_at: datetime
     last_active: datetime
 
@@ -279,6 +370,48 @@ class ChatEvent(_Model):
     created_at: datetime
 
 
+# ── Attention rail ─────────────────────────────────────────────────────────
+
+
+class AttentionPendingItem(_Model):
+    """An unresolved permission_request or ask_user_question."""
+
+    kind: Literal["pending"] = "pending"
+    session_id: UUID
+    agent_id: int
+    agent_name: str
+    session_status: SessionStatus
+    seq: int
+    payload: dict[str, Any]
+    at: datetime
+    preview: str | None = None
+
+
+class AttentionIdleItem(_Model):
+    """A running session whose agent finished its last turn."""
+
+    kind: Literal["idle"] = "idle"
+    session_id: UUID
+    agent_id: int
+    agent_name: str
+    at: datetime
+    preview: str | None = None
+
+
+class AttentionPausedItem(_Model):
+    """A session paused within the recent window — a candidate to resume."""
+
+    kind: Literal["paused"] = "paused"
+    session_id: UUID
+    agent_id: int
+    agent_name: str
+    snapshot_image_id: str | None = None
+    at: datetime
+
+
+AttentionItem = AttentionPendingItem | AttentionIdleItem | AttentionPausedItem
+
+
 __all__ = [
     "Agent",
     "AgentConnectorToggle",
@@ -286,20 +419,34 @@ __all__ = [
     "AgentImage",
     "AgentMcp",
     "AgentSkill",
+    "AttentionIdleItem",
+    "AttentionItem",
+    "AttentionPausedItem",
+    "AttentionPendingItem",
     "Build",
     "BuildQueued",
     "BuildState",
     "BuildStatus",
+    "CatalogSetupKind",
+    "CatalogTrustLevel",
     "ChatEvent",
     "Connector",
     "ConnectorAuthKind",
     "ConnectorAuthorize",
+    "ConnectorCatalogItem",
     "ConnectorDiscovery",
     "CredentialPart",
     "Credentials",
     "LogUrl",
     "McpTransport",
     "PermissionPreset",
+    "Preview",
+    "PreviewActionResult",
+    "PreviewBatchResult",
+    "PreviewSpec",
+    "PreviewStatus",
+    "Runtime",
+    "SaveAsBaseResult",
     "ServeStatus",
     "Session",
     "SessionStatus",

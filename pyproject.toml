@@ -91,6 +91,8 @@ ignore = [
 # annotations (used to disambiguate from the resources' own ``list()`` method).
 "src/anyframe/agents.py" = ["TC003"]
 "src/anyframe/sessions.py" = ["TC003"]
+"src/anyframe/connectors.py" = ["TC003"]
+"src/anyframe/attention.py" = ["TC003"]
 
 [tool.mypy]
 python_version = "3.10"

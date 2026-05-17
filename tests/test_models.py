@@ -59,11 +59,24 @@ def test_credentials_part_set_flag():
     c = models.Credentials.model_validate(
         {
             "claude": {"set": True, "last4": "wxyz", "updated_at": "2025-01-01T00:00:00Z"},
+            "codex": {"set": False, "last4": None, "updated_at": None},
             "github": {"set": False, "last4": None, "updated_at": None},
         }
     )
     assert c.claude.set is True
+    assert c.codex.set is False
     assert c.github.set is False
+
+
+def test_credentials_tolerates_missing_codex():
+    """Older servers don't return codex — must still parse (default applied)."""
+    c = models.Credentials.model_validate(
+        {
+            "claude": {"set": True, "last4": "wxyz", "updated_at": None},
+            "github": {"set": False, "last4": None, "updated_at": None},
+        }
+    )
+    assert c.codex.set is False
 
 
 # ── Agents ────────────────────────────────────────────────────────────────
@@ -114,13 +127,13 @@ def test_agent_skill_enum_values():
         {
             "id": 1,
             "name": "deploy",
-            "source": "builtin",
+            "source": "inline",
             "content": {},
             "enabled": True,
             "created_at": "2025-01-01T00:00:00Z",
         }
     )
-    assert s.source == "builtin"
+    assert s.source == "inline"
 
 
 def test_agent_mcp_carries_transport():
@@ -186,16 +199,44 @@ def test_session_parses_all_optional_fields_null():
             "sandbox_url": None,
             "snapshot_image_id": None,
             "idle_timeout_s": 300,
-            "serve_status": "stopped",
-            "serve_port": None,
-            "serve_url": None,
+            "previews": [],
+            "is_setup_session": False,
             "created_at": "2025-01-01T00:00:00Z",
             "last_active": "2025-01-01T00:00:00Z",
         }
     )
     assert s.status == "booting"
-    assert s.serve_status == "stopped"
+    assert s.previews == []
+    assert s.is_setup_session is False
     assert isinstance(s.created_at, datetime)
+
+
+def test_session_parses_with_running_preview():
+    s = models.Session.model_validate(
+        {
+            "id": "00000000-0000-0000-0000-000000000001",
+            "agent_id": 1,
+            "status": "running",
+            "idle_timeout_s": 300,
+            "previews": [
+                {
+                    "port": 3000,
+                    "name": "web",
+                    "cmd": "bun dev",
+                    "status": "running",
+                    "url": "https://tunnel/3000",
+                    "started_at": 1234567890.0,
+                    "exit_code": None,
+                }
+            ],
+            "is_setup_session": True,
+            "created_at": "2025-01-01T00:00:00Z",
+            "last_active": "2025-01-01T00:00:00Z",
+        }
+    )
+    assert s.previews[0].port == 3000
+    assert s.previews[0].url == "https://tunnel/3000"
+    assert s.is_setup_session is True
 
 
 def test_session_status_terminal_states_valid():
@@ -211,9 +252,8 @@ def test_session_status_terminal_states_valid():
                 "sandbox_url": None,
                 "snapshot_image_id": None,
                 "idle_timeout_s": 300,
-                "serve_status": "stopped",
-                "serve_port": None,
-                "serve_url": None,
+                "previews": [],
+                "is_setup_session": False,
                 "created_at": "2025-01-01T00:00:00Z",
                 "last_active": "2025-01-01T00:00:00Z",
             }

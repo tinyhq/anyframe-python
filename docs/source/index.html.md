@@ -166,15 +166,18 @@ Pass `load_dotenv=False` when embedding the SDK inside a library that shouldn't 
 #   User       ← af.me()
 #   Token      ← af.tokens
 #   Connector  ← af.connectors       (user-scoped, reusable across agents)
-#   Agent      ← af.agents           (config: repo, prompt, skills, mcps)
+#                                    + af.connectors.list_catalog() / install_catalog_*
+#   Agent      ← af.agents           (config: repo, prompt, skills, mcps, runtime, env_vars)
 #     ├─ Skill ← af.agents.skills
 #     ├─ MCP   ← af.agents.mcps
 #     └─ Toggle← af.agents.connectors (per-agent on/off for user connectors)
 #   Build      ← af.agents.build / .builds / .wait_for_build
 #   Session    ← af.sessions         (a live sandbox)
 #     ├─ Chat  ← af.sessions.message / .transcript / .events
-#     ├─ Serve ← af.sessions.serve_start / .serve_stop
+#     ├─ Preview ← af.sessions.previews_start / .previews_stop / .previews_list
+#     ├─ Setup ← af.sessions.create(is_setup_session=True) → .save_as_base
 #     └─ Snap  ← af.sessions.snapshots
+#   Attention  ← af.attention.list   (pending / idle / paused — needs you)
 ```
 
 Before reading the reference, six concepts:
@@ -238,10 +241,11 @@ print(me.email)
 
 # Resources
 af.tokens         # API token management
-af.credentials    # Claude / GitHub credentials
-af.connectors     # User-scoped MCP registrations
+af.credentials    # Claude / Codex / GitHub credentials
+af.connectors     # User-scoped MCP registrations + curated catalog
 af.agents         # Agents, builds, skills, mcps
-af.sessions       # Live sandboxes
+af.sessions       # Live sandboxes (chat, previews, snapshots, save-as-base)
+af.attention      # Items needing the operator (pending / idle / paused)
 ```
 
 `AnyFrame` and `AsyncAnyFrame` are the entry points. Both share the same constructor signature and the same resource attributes, so you can write code once and swap clients.
@@ -322,13 +326,15 @@ agent = af.agents.create(
 | --- | --- | --- |
 | `name` | `str` | Required. Human-readable label. |
 | `description` | <code>str &#124; None</code> | Free-text description. |
-| `system_prompt` | <code>str &#124; None</code> | Prefix injected into Claude's system prompt. |
+| `system_prompt` | <code>str &#124; None</code> | Prefix injected into the runtime's system prompt. |
+| `runtime` | <code>"claude" &#124; "codex" &#124; None</code> | Which coding-agent runtime drives the sandbox. Server default: `"claude"`. |
 | `repo_url` | <code>str &#124; None</code> | `owner/name` GitHub repo. Omit for a general-purpose agent. |
 | `repo_ref` | <code>str &#124; None</code> | Branch / tag / SHA. Server default: `main`. |
 | `install_cmd` | <code>str &#124; None</code> | Shell command run during build to install deps. |
 | `serve_cmd` | <code>str &#124; None</code> | Preview-server command (e.g. `bun dev`). |
-| `preview_ports` | <code>list[int] &#124; None</code> | Ports the SDK is allowed to tunnel via `serve_start`. |
+| `preview_ports` | <code>list[int] &#124; None</code> | Ports the SDK is allowed to tunnel via the previews API. |
 | `permissions` | <code>dict &#124; None</code> | Permissions preset (see dashboard). |
+| `env_vars` | <code>dict[str, str] &#124; None</code> | Env vars injected into every session. Keys must match `[A-Z_][A-Z0-9_]*`. Values encrypted at rest, masked in responses. |
 
 ## Build
 
@@ -463,18 +469,48 @@ The chat bridge speaks two flavours of API:
 - **`message` / `respond`** — POST endpoints. The body is forwarded verbatim to the in-sandbox chat server, so the exact schema lives there.
 - **`transcript` / `events`** — replay vs subscribe. `transcript` returns persisted events ordered by `seq`. `events` streams them live as SSE — pass `last_event_id` to resume from a checkpoint.
 
-## Preview server (`serve`)
+## Previews (in-sandbox dev servers)
 
 ```python
-af.sessions.serve_start(session.id, cmd="bun dev", port=3000)
-status = af.sessions.serve_status(session.id)
-print(status.serve_url)                  # tunnel URL, set once the port binds
+# Start one preview — port is optional; the control plane picks from
+# preview_ports or allocates a new one (restart_pending=True if it does).
+result = af.sessions.previews_start(session.id, cmd="bun dev", port=3000, name="web")
+print(result.url)                              # tunnel URL once running
 
-af.sessions.serve_logs(session.id, tail=200)
-af.sessions.serve_stop(session.id)
+af.sessions.previews_status(session.id, name="web")
+af.sessions.previews_list(session.id)          # → list[Preview]
+af.sessions.previews_logs(session.id, name="web", tail=200)
+af.sessions.previews_stop(session.id, name="web")
+
+# Atomic batch — restarts the sandbox at most once if new ports are allocated.
+af.sessions.previews_batch_start(session.id, [
+    anyframe.PreviewSpec(cmd="bun dev", port=3000, name="web"),
+    anyframe.PreviewSpec(cmd="bun api", port=4000, name="api"),
+])
 ```
 
-Launch a dev server inside the sandbox and tunnel its port out. The `port` must be in the agent's `preview_ports` list, or the call returns `400 ValidationError`.
+Launch dev servers inside the sandbox and tunnel their ports out. Multiple previews can coexist per session — address them by `port` or `name`. The live list lives on `session.previews` (a `list[Preview]`); the older `serve_status` / `serve_port` / `serve_url` triple was retired in favour of this list.
+
+| Method | Action | Returns |
+| --- | --- | --- |
+| `previews_list` | `list` | `list[Preview]` |
+| `previews_start` | `start` | `PreviewActionResult` |
+| `previews_stop` | `stop` | `PreviewActionResult` |
+| `previews_status` | `status` | `PreviewActionResult` |
+| `previews_logs` | `logs` | raw JSON (`{"lines": [...]}`) |
+| `previews_batch_start` | `batch_start` | `PreviewBatchResult` |
+
+## Setup sessions (`save_as_base`)
+
+```python
+session = af.sessions.create(agent_id=agent.id, is_setup_session=True)
+af.sessions.wait_until_running(session.id)
+# ... do interactive seeding ...
+result = af.sessions.save_as_base(session.id)
+# SaveAsBaseResult(warmup_image_id='im_abc', warmup_inputs_hash='sha256:...')
+```
+
+Setup sessions are user-driven sandboxes you use to clone, install, and warm caches before promoting the result to the agent's *warmup image*. Future normal sessions for the same agent hydrate from the promoted snapshot. Setup sessions can re-promote multiple times — each call overwrites the saved base.
 
 ## Snapshots
 
@@ -514,26 +550,61 @@ Connectors are user-scoped MCP registrations. Configure them once, then flip the
 - **OAuth 2.0** — `create_oauth` returns an authorization URL; the user finishes the flow in a browser.
 - **Bearer** — `create_bearer` accepts a token directly. Use for tokens you've already minted out-of-band.
 
+## Catalog
+
+```python
+catalog = af.connectors.list_catalog()       # ConnectorCatalogItem[]
+linear = next(c for c in catalog if c.slug == "linear")
+print(linear.setup_kind, linear.installed)   # "oauth_dcr", False
+
+# Install by slug — the catalog entry supplies the MCP URL + display name.
+af.connectors.install_catalog_oauth("linear")    # returns ConnectorAuthorize
+af.connectors.install_catalog_bearer("sentry", token="sntrys_...")
+```
+
+The control plane ships a curated catalog (Linear, Sentry, Google, …). Each entry's `setup_kind` (`oauth_dcr`, `oauth_preregistered`, `bearer_token`, `custom_mcp`) tells you which install method to call. Entries with `coming_soon=True` reject install attempts.
+
+## Attention rail
+
+```python
+for item in af.attention.list(limit=20):
+    if item.kind == "pending":
+        # agent is blocked on a permission_request or ask_user_question
+        ...
+    elif item.kind == "idle":
+        # running session waiting on the next user prompt
+        ...
+    elif item.kind == "paused":
+        # session paused within the last 24h — candidate to resume
+        ...
+```
+
+`af.attention.list()` returns the rail's curated, newest-first list of items needing the operator. Three discriminated-union members — `AttentionPendingItem`, `AttentionIdleItem`, `AttentionPausedItem` — share the same parent type `AttentionItem`. Pending always sorts above idle and paused.
+
 # Credentials
 
 ```python
 view = af.credentials.get()
 # Credentials(claude=CredentialPart(set=True, last4='abcd'),
+#             codex=CredentialPart(set=False, last4=None),
 #             github=CredentialPart(set=False, last4=None))
 
-af.credentials.set_claude("sk-...")        # Claude OAuth token (required)
+af.credentials.set_claude("sk-...")        # Claude OAuth token (Claude runtime)
+af.credentials.set_codex("sk-...")         # OpenAI Codex token (Codex runtime)
 af.credentials.set_github("ghp_...")       # GitHub PAT (optional, for private repos)
 
 af.credentials.clear_claude()
+af.credentials.clear_codex()
 af.credentials.clear_github()
 ```
 
-The control plane needs two credentials per user:
+The control plane stores up to three credentials per user:
 
-- **Claude OAuth token** — required, used by every sandbox to talk to Anthropic.
+- **Claude OAuth token** — required for agents on the Claude runtime.
+- **Codex token** — required for agents on the Codex (OpenAI) runtime.
 - **GitHub PAT** — optional, only needed to clone private repos.
 
-The SDK only ever surfaces redacted views (`set=True` + `last4=...`). Plaintext leaves your machine once, when you call `set_*`.
+The SDK only ever surfaces redacted views (`set=True` + `last4=...`). Plaintext leaves your machine once, when you call `set_*`. Older control planes that pre-date the Codex runtime omit the `codex` key from the response; the SDK parses those responses with `codex.set=False`.
 
 # Tokens
 

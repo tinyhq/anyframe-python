@@ -75,7 +75,13 @@ Agents are the unit of "what runs in the sandbox" — a repo, a system prompt, a
 
 ```python
 af.agents.list()
-af.agents.create(name="demo", repo_url="owner/name", install_cmd="bun install")
+af.agents.create(
+    name="demo",
+    repo_url="owner/name",
+    install_cmd="bun install",
+    runtime="claude",                   # or "codex"
+    env_vars={"DATABASE_URL": "..."},   # injected into every session
+)
 af.agents.get(agent_id)                # AgentDetail: includes skills, mcps, connectors, image
 af.agents.update(agent_id, name="renamed")
 af.agents.delete(agent_id)
@@ -87,7 +93,7 @@ Skills are bundles of instructions the agent loads at boot (think: "deploy this 
 
 ```python
 af.agents.skills.list(agent_id)
-af.agents.skills.create(agent_id, name="deploy", source="builtin", content={...})
+af.agents.skills.create(agent_id, name="deploy", source="inline", content={...})
 af.agents.skills.update(agent_id, skill_id, enabled=False)
 af.agents.skills.delete(agent_id, skill_id)
 ```
@@ -115,6 +121,16 @@ authorize = af.connectors.create_oauth(mcp_url=discovery.mcp_url, display_name="
 af.connectors.create_bearer(mcp_url="...", display_name="...", token="...")
 af.connectors.reauthorize(connector_id)
 af.connectors.delete(connector_id)
+```
+
+### Catalog
+
+The control plane ships with a curated catalog (Linear, Sentry, Google, …). Install by slug instead of pasting URLs.
+
+```python
+catalog = af.connectors.list_catalog()         # ConnectorCatalogItem[]
+af.connectors.install_catalog_oauth("linear")  # → authorize URL (DCR or pre-registered)
+af.connectors.install_catalog_bearer("sentry", token="...")
 ```
 
 Per-agent toggle (controls which connectors apply to one agent):
@@ -153,6 +169,18 @@ af.sessions.resume(session.id)
 af.sessions.delete(session.id)              # hard delete; requires terminated
 ```
 
+### Setup sessions + save-as-base
+
+Setup sessions are user-driven sandboxes you use to seed an agent's filesystem (clone, install, warm caches), then promote to that agent's warmup image. Future normal sessions then hydrate from the promoted snapshot.
+
+```python
+session = af.sessions.create(agent_id=agent.id, is_setup_session=True)
+af.sessions.wait_until_running(session.id)
+# ... do interactive setup ...
+result = af.sessions.save_as_base(session.id)  # SaveAsBaseResult
+print(result.warmup_image_id)
+```
+
 ## Chat
 
 Talk to the running agent. `message` and `respond` proxy verbatim to the in-sandbox chat server; `events` is the live SSE stream; `transcript` reads persisted history.
@@ -165,26 +193,48 @@ af.sessions.transcript(session.id, since=0, limit=1000)
 af.sessions.respond(session.id, {"decision": "approve", "tool_use_id": "..."})
 ```
 
-## Serve (preview server)
+## Previews (in-sandbox dev servers)
 
-Launch a dev server inside the sandbox and tunnel its port out — useful for live previews of the thing the agent is building.
+Launch dev servers inside the sandbox and tunnel their ports out. Multiple previews can run per session — name them or address them by port.
 
 ```python
-af.sessions.serve_start(session.id, cmd="bun dev", port=3000)
-af.sessions.serve_status(session.id)        # serve_url is set when up
-af.sessions.serve_logs(session.id, tail=200)
-af.sessions.serve_stop(session.id)
+af.sessions.previews_start(session.id, cmd="bun dev", port=3000, name="web")
+af.sessions.previews_status(session.id, name="web")     # PreviewActionResult
+af.sessions.previews_list(session.id)                    # Preview[]
+af.sessions.previews_logs(session.id, name="web", tail=200)
+af.sessions.previews_stop(session.id, name="web")
+
+# Atomic batch — restarts at most once when allocating new ports
+af.sessions.previews_batch_start(session.id, [
+    anyframe.PreviewSpec(cmd="bun dev", port=3000, name="web"),
+    anyframe.PreviewSpec(cmd="bun api", port=4000, name="api"),
+])
 ```
+
+> **Migrated from the old `serve_*` methods.** The control plane replaced `/sessions/{id}/serve/*` with a single `POST /sessions/{id}/previews` action body. The SDK methods above target that endpoint; `Session.previews` (a list of `Preview`) replaces `serve_status` / `serve_port` / `serve_url`.
+
+## Attention rail
+
+A curated, newest-first list of things the operator should act on — pending permission prompts, idle running sessions, and recently-paused sessions.
+
+```python
+for item in af.attention.list(limit=20):
+    print(item.kind, item.agent_name, item.preview)
+```
+
+Each row is one of `AttentionPendingItem`, `AttentionIdleItem`, or `AttentionPausedItem`. Discriminate on `item.kind`.
 
 ## Credentials
 
-The control plane needs your Claude OAuth token (always) and a GitHub PAT (for private repos). It only ever shows you redacted views.
+The control plane needs a runtime credential — Claude OAuth (default Claude runtime) or an OpenAI Codex token (Codex runtime) — plus a GitHub PAT for private repos. It only ever shows you redacted views.
 
 ```python
-af.credentials.get()                        # set flag + last4
+af.credentials.get()                        # set flag + last4 for claude / codex / github
 af.credentials.set_claude("sk-...")
+af.credentials.set_codex("sk-...")
 af.credentials.set_github("ghp_...")
 af.credentials.clear_claude()
+af.credentials.clear_codex()
 af.credentials.clear_github()
 ```
 

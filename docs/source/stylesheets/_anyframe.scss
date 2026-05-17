@@ -118,16 +118,18 @@ a:hover {
     text-shadow: none;
   }
 
+  // Section breaks rely on whitespace, not a rule line — keeps the page
+  // calm and avoids the underline-vs-next-heading collision the old
+  // border-bottom caused.
   h1 {
     font-size: 32px;
     font-weight: 700;
     letter-spacing: -0.025em;
-    line-height: 1.1;
-    margin-top: 56px;
-    margin-bottom: 18px;
-    padding-bottom: 18px;
-    // Heavier than $af-border so section breaks read on the dark stage.
-    border-bottom: 1px solid $af-border-heavy;
+    line-height: 1.15;
+    margin-top: 64px;
+    margin-bottom: 20px;
+    padding-bottom: 0;
+    border-bottom: 0;
   }
   h1:first-child,
   .h1:first-child { margin-top: 0; }
@@ -136,7 +138,9 @@ a:hover {
     font-size: 22px;
     font-weight: 600;
     letter-spacing: -0.015em;
-    margin-top: 40px;
+    line-height: 1.25;
+    margin-top: 36px;
+    margin-bottom: 12px;
     padding-top: 0;
     border-top: 0;
   }

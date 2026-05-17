@@ -2,7 +2,7 @@
 
 [![PyPI version](https://img.shields.io/pypi/v/anyframe.svg)](https://pypi.org/project/anyframe/)
 
-The official Python SDK for the [AnyFrame](https://anyfrm.com) control plane — point an agent at a repo, get a sandbox running Claude Code inside.
+The official Python SDK for the [AnyFrame](https://anyfrm.com) control plane - point an agent at a repo, get a sandbox running Claude Code inside.
 
 ```
                                 ┌──────────────────────────────┐
@@ -71,7 +71,7 @@ asyncio.run(main())
 
 ## Agents
 
-Agents are the unit of "what runs in the sandbox" — a repo, a system prompt, a permissions config.
+Agents are the unit of "what runs in the sandbox" - a repo, a system prompt, a permissions config.
 
 ```python
 af.agents.list()
@@ -100,7 +100,7 @@ af.agents.skills.delete(agent_id, skill_id)
 
 ## MCPs
 
-MCPs configured inline on the agent — for one-off MCP servers that aren't worth setting up as a reusable connector.
+MCPs configured inline on the agent - for one-off MCP servers that aren't worth setting up as a reusable connector.
 
 ```python
 af.agents.mcps.list(agent_id)
@@ -111,7 +111,7 @@ af.agents.mcps.delete(agent_id, mcp_id)
 
 ## Connectors
 
-User-level MCP connectors — configure once, then opt in per-agent via the connector-toggle API below.
+User-level MCP connectors - configure once, then opt in per-agent via the connector-toggle API below.
 
 ```python
 af.connectors.list()
@@ -142,7 +142,7 @@ af.agents.connectors.set(agent_id, connector_id, enabled=True)
 
 ## Builds
 
-Builds bake an agent's repo + dependencies into a cached sandbox image — required before a session can boot it.
+Builds bake an agent's repo + dependencies into a cached sandbox image - required before a session can boot it.
 
 ```python
 af.agents.build(agent_id, force=False)      # queue a build
@@ -195,7 +195,7 @@ af.sessions.respond(session.id, {"decision": "approve", "tool_use_id": "..."})
 
 ## Previews (in-sandbox dev servers)
 
-Launch dev servers inside the sandbox and tunnel their ports out. Multiple previews can run per session — name them or address them by port.
+Launch dev servers inside the sandbox and tunnel their ports out. Multiple previews can run per session - name them or address them by port.
 
 ```python
 af.sessions.previews_start(session.id, cmd="bun dev", port=3000, name="web")
@@ -204,7 +204,7 @@ af.sessions.previews_list(session.id)                    # Preview[]
 af.sessions.previews_logs(session.id, name="web", tail=200)
 af.sessions.previews_stop(session.id, name="web")
 
-# Atomic batch — restarts at most once when allocating new ports
+# Atomic batch - restarts at most once when allocating new ports
 af.sessions.previews_batch_start(session.id, [
     anyframe.PreviewSpec(cmd="bun dev", port=3000, name="web"),
     anyframe.PreviewSpec(cmd="bun api", port=4000, name="api"),
@@ -215,7 +215,7 @@ af.sessions.previews_batch_start(session.id, [
 
 ## Attention rail
 
-A curated, newest-first list of things the operator should act on — pending permission prompts, idle running sessions, and recently-paused sessions.
+A curated, newest-first list of things the operator should act on - pending permission prompts, idle running sessions, and recently-paused sessions.
 
 ```python
 for item in af.attention.list(limit=20):
@@ -226,7 +226,7 @@ Each row is one of `AttentionPendingItem`, `AttentionIdleItem`, or `AttentionPau
 
 ## Credentials
 
-The control plane needs a runtime credential — Claude OAuth (default Claude runtime) or an OpenAI Codex token (Codex runtime) — plus a GitHub PAT for private repos. It only ever shows you redacted views.
+The control plane needs a runtime credential - Claude OAuth (default Claude runtime) or an OpenAI Codex token (Codex runtime) - plus a GitHub PAT for private repos. It only ever shows you redacted views.
 
 ```python
 af.credentials.get()                        # set flag + last4 for claude / codex / github
@@ -240,7 +240,7 @@ af.credentials.clear_github()
 
 ## Tokens
 
-Manage the API keys this SDK uses. `create` returns the raw token exactly once — store it now.
+Manage the API keys this SDK uses. `create` returns the raw token exactly once - store it now.
 
 ```python
 af.tokens.list()
@@ -256,9 +256,9 @@ All errors derive from `anyframe.AnyFrameError`, so one `except` catches everyth
 ```python
 anyframe.AnyFrameError       # base
 ├── anyframe.APIError        # any non-2xx (status_code, message)
-├── anyframe.AuthError       # 401 — bad / missing API key
+├── anyframe.AuthError       # 401 - bad / missing API key
 ├── anyframe.NotFoundError   # 404
-├── anyframe.ConflictError   # 409 — e.g. delete on a running session
+├── anyframe.ConflictError   # 409 - e.g. delete on a running session
 ├── anyframe.ValidationError # 400/422 (carries field-level details)
 ├── anyframe.RateLimitError  # 429 (exposes retry_after)
 └── anyframe.ServerError     # 5xx

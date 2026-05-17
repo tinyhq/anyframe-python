@@ -14,7 +14,7 @@ from tests.conftest import BASE_URL
 SID = "11111111-2222-3333-4444-555555555555"
 
 
-def _session(status="booting", serve_status="stopped"):
+def _session(status="booting", previews=None, is_setup_session=False):
     return {
         "id": SID,
         "agent_id": 1,
@@ -23,9 +23,8 @@ def _session(status="booting", serve_status="stopped"):
         "sandbox_url": None,
         "snapshot_image_id": None,
         "idle_timeout_s": 300,
-        "serve_status": serve_status,
-        "serve_port": None,
-        "serve_url": None,
+        "previews": previews or [],
+        "is_setup_session": is_setup_session,
         "created_at": "2025-01-01T00:00:00Z",
         "last_active": "2025-01-01T00:00:00Z",
     }

@@ -5,10 +5,8 @@ A session is one live sandbox running an agent. The lifecycle is:
 re-boots from a snapshot.
 
 This module covers the session record and snapshots, plus the chat bridge
-(``message`` / ``respond`` / ``events`` / ``transcript``) and the in-sandbox
-preview server (``serve_start`` / ``serve_stop`` / ``serve_status`` /
-``serve_logs``) — all wired onto the same :class:`Sessions` resource so
-callers don't have to think about where each method lives.
+(``message`` / ``respond`` / ``events`` / ``transcript``), live preview
+servers (``previews_*``), and setup-session promotion (``save_as_base``).
 """
 
 from __future__ import annotations
@@ -21,7 +19,16 @@ from uuid import UUID
 
 from ._sse import SSEEvent, parse_sse, parse_sse_async
 from .exceptions import AnyFrameError
-from .models import ChatEvent, Session, Snapshot
+from .models import (
+    ChatEvent,
+    Preview,
+    PreviewActionResult,
+    PreviewBatchResult,
+    PreviewSpec,
+    SaveAsBaseResult,
+    Session,
+    Snapshot,
+)
 
 if TYPE_CHECKING:  # pragma: no cover
     from collections.abc import AsyncIterator, Iterator
@@ -49,6 +56,13 @@ def _sid(session_id: SessionId) -> str:
     return str(session_id)
 
 
+def _spec_payload(spec: PreviewSpec | dict[str, Any]) -> dict[str, Any]:
+    """Coerce a :class:`PreviewSpec` (or raw dict) into the wire body shape."""
+    if isinstance(spec, PreviewSpec):
+        return _prune(spec.model_dump())
+    return _prune(dict(spec))
+
+
 class Sessions:
     """Manage agent sessions (sandboxes)."""
 
@@ -67,6 +81,7 @@ class Sessions:
         idle_timeout_s: int = 300,
         unsafe: bool = False,
         resume_from_snapshot_id: int | None = None,
+        is_setup_session: bool = False,
     ) -> Session:
         """Boot a new sandbox for an agent.
 
@@ -78,6 +93,9 @@ class Sessions:
                 process. **Strongly** recommended to leave this off.
             resume_from_snapshot_id: Hydrate from a snapshot instead of booting
                 a fresh sandbox.
+            is_setup_session: Mark this session as user-driven setup. Boots
+                from the Deps image (ignoring any prior warmup) and unlocks
+                :meth:`save_as_base`.
 
         Returns:
             The created session record. It starts in the ``booting`` state —
@@ -89,6 +107,7 @@ class Sessions:
                 "idle_timeout_s": idle_timeout_s,
                 "unsafe": unsafe,
                 "resume_from_snapshot_id": resume_from_snapshot_id,
+                "is_setup_session": is_setup_session or None,
             }
         )
         data = self._http.request("POST", "/api/sessions", json=body)
@@ -119,6 +138,19 @@ class Sessions:
         """List snapshots for a session, newest first."""
         data = self._http.request("GET", f"/api/sessions/{_sid(session_id)}/snapshots")
         return [Snapshot.model_validate(row) for row in data]
+
+    def save_as_base(self, session_id: SessionId) -> SaveAsBaseResult:
+        """Snapshot a setup session and promote it to the agent's warmup image.
+
+        Only valid for setup sessions (those created with
+        ``is_setup_session=True``). Future normal sessions for the same agent
+        will warm-hydrate from the resulting snapshot. Overwrites any prior
+        warmup image — setup sessions can re-promote multiple times.
+        """
+        data = self._http.request(
+            "POST", f"/api/sessions/{_sid(session_id)}/save-as-base"
+        )
+        return SaveAsBaseResult.model_validate(data)
 
     def wait_until_running(
         self,
@@ -214,41 +246,98 @@ class Sessions:
         )
         yield from parse_sse(lines)
 
-    # ── serve (preview server) ────────────────────────────────────────────
+    # ── previews (in-sandbox dev servers) ─────────────────────────────────
 
-    def serve_start(self, session_id: SessionId, *, cmd: str, port: int) -> Session:
+    def previews_list(self, session_id: SessionId) -> builtins.list[Preview]:
+        """Return every live or stopped preview server for a session."""
+        data = self._http.request(
+            "POST",
+            f"/api/sessions/{_sid(session_id)}/previews",
+            json={"action": "list"},
+        )
+        return [Preview.model_validate(row) for row in data]
+
+    def previews_start(
+        self,
+        session_id: SessionId,
+        *,
+        cmd: str,
+        port: int | None = None,
+        name: str | None = None,
+    ) -> PreviewActionResult:
         """Start a preview server inside the sandbox.
 
-        Args:
-            session_id: The running session to serve from.
-            cmd: Shell command to launch (e.g. ``"bun dev"``).
-            port: The port the command binds — must be in the agent's
-                ``preview_ports`` list, or the call returns 400.
+        When ``port`` is omitted the control plane picks one from the agent's
+        ``preview_ports`` (or allocates a new one, which triggers a sandbox
+        restart — observable via ``restart_pending=True``).
         """
         data = self._http.request(
             "POST",
-            f"/api/sessions/{_sid(session_id)}/serve/start",
-            json={"cmd": cmd, "port": port},
+            f"/api/sessions/{_sid(session_id)}/previews",
+            json=_prune({"action": "start", "cmd": cmd, "port": port, "name": name}),
         )
-        return Session.model_validate(data)
+        return PreviewActionResult.model_validate(data)
 
-    def serve_stop(self, session_id: SessionId) -> Session:
-        """Stop the preview server. Returns the updated session record."""
-        data = self._http.request("POST", f"/api/sessions/{_sid(session_id)}/serve/stop")
-        return Session.model_validate(data)
+    def previews_stop(
+        self,
+        session_id: SessionId,
+        *,
+        port: int | None = None,
+        name: str | None = None,
+    ) -> PreviewActionResult:
+        """Stop a running preview. Pass either ``port`` or ``name`` to target one."""
+        data = self._http.request(
+            "POST",
+            f"/api/sessions/{_sid(session_id)}/previews",
+            json=_prune({"action": "stop", "port": port, "name": name}),
+        )
+        return PreviewActionResult.model_validate(data)
 
-    def serve_status(self, session_id: SessionId) -> Session:
-        """Return the live preview-server status (port + tunnel URL if up)."""
-        data = self._http.request("GET", f"/api/sessions/{_sid(session_id)}/serve/status")
-        return Session.model_validate(data)
+    def previews_status(
+        self,
+        session_id: SessionId,
+        *,
+        port: int | None = None,
+        name: str | None = None,
+    ) -> PreviewActionResult:
+        """Probe one preview's current status."""
+        data = self._http.request(
+            "POST",
+            f"/api/sessions/{_sid(session_id)}/previews",
+            json=_prune({"action": "status", "port": port, "name": name}),
+        )
+        return PreviewActionResult.model_validate(data)
 
-    def serve_logs(self, session_id: SessionId, *, tail: int = 200) -> Any:
-        """Return the last ``tail`` lines of preview-server stdout/stderr."""
+    def previews_logs(
+        self,
+        session_id: SessionId,
+        *,
+        port: int | None = None,
+        name: str | None = None,
+        tail: int = 200,
+    ) -> Any:
+        """Return the last ``tail`` lines of a preview's stdout/stderr."""
         return self._http.request(
-            "GET",
-            f"/api/sessions/{_sid(session_id)}/serve/logs",
-            params={"tail": tail},
+            "POST",
+            f"/api/sessions/{_sid(session_id)}/previews",
+            json=_prune({"action": "logs", "port": port, "name": name, "tail": tail}),
         )
+
+    def previews_batch_start(
+        self,
+        session_id: SessionId,
+        previews: builtins.list[PreviewSpec | dict[str, Any]],
+    ) -> PreviewBatchResult:
+        """Start a batch of previews atomically — restart-once semantics."""
+        data = self._http.request(
+            "POST",
+            f"/api/sessions/{_sid(session_id)}/previews",
+            json={
+                "action": "batch_start",
+                "previews": [_spec_payload(s) for s in previews],
+            },
+        )
+        return PreviewBatchResult.model_validate(data)
 
 
 class AsyncSessions:
@@ -268,6 +357,7 @@ class AsyncSessions:
         idle_timeout_s: int = 300,
         unsafe: bool = False,
         resume_from_snapshot_id: int | None = None,
+        is_setup_session: bool = False,
     ) -> Session:
         body = _prune(
             {
@@ -275,6 +365,7 @@ class AsyncSessions:
                 "idle_timeout_s": idle_timeout_s,
                 "unsafe": unsafe,
                 "resume_from_snapshot_id": resume_from_snapshot_id,
+                "is_setup_session": is_setup_session or None,
             }
         )
         data = await self._http.request("POST", "/api/sessions", json=body)
@@ -302,6 +393,12 @@ class AsyncSessions:
     async def snapshots(self, session_id: SessionId) -> builtins.list[Snapshot]:
         data = await self._http.request("GET", f"/api/sessions/{_sid(session_id)}/snapshots")
         return [Snapshot.model_validate(row) for row in data]
+
+    async def save_as_base(self, session_id: SessionId) -> SaveAsBaseResult:
+        data = await self._http.request(
+            "POST", f"/api/sessions/{_sid(session_id)}/save-as-base"
+        )
+        return SaveAsBaseResult.model_validate(data)
 
     async def wait_until_running(
         self,
@@ -360,30 +457,87 @@ class AsyncSessions:
         async for event in parse_sse_async(lines):
             yield event
 
-    # ── serve (preview server) ────────────────────────────────────────────
+    # ── previews ──────────────────────────────────────────────────────────
 
-    async def serve_start(self, session_id: SessionId, *, cmd: str, port: int) -> Session:
+    async def previews_list(self, session_id: SessionId) -> builtins.list[Preview]:
         data = await self._http.request(
             "POST",
-            f"/api/sessions/{_sid(session_id)}/serve/start",
-            json={"cmd": cmd, "port": port},
+            f"/api/sessions/{_sid(session_id)}/previews",
+            json={"action": "list"},
         )
-        return Session.model_validate(data)
+        return [Preview.model_validate(row) for row in data]
 
-    async def serve_stop(self, session_id: SessionId) -> Session:
-        data = await self._http.request("POST", f"/api/sessions/{_sid(session_id)}/serve/stop")
-        return Session.model_validate(data)
+    async def previews_start(
+        self,
+        session_id: SessionId,
+        *,
+        cmd: str,
+        port: int | None = None,
+        name: str | None = None,
+    ) -> PreviewActionResult:
+        data = await self._http.request(
+            "POST",
+            f"/api/sessions/{_sid(session_id)}/previews",
+            json=_prune({"action": "start", "cmd": cmd, "port": port, "name": name}),
+        )
+        return PreviewActionResult.model_validate(data)
 
-    async def serve_status(self, session_id: SessionId) -> Session:
-        data = await self._http.request("GET", f"/api/sessions/{_sid(session_id)}/serve/status")
-        return Session.model_validate(data)
+    async def previews_stop(
+        self,
+        session_id: SessionId,
+        *,
+        port: int | None = None,
+        name: str | None = None,
+    ) -> PreviewActionResult:
+        data = await self._http.request(
+            "POST",
+            f"/api/sessions/{_sid(session_id)}/previews",
+            json=_prune({"action": "stop", "port": port, "name": name}),
+        )
+        return PreviewActionResult.model_validate(data)
 
-    async def serve_logs(self, session_id: SessionId, *, tail: int = 200) -> Any:
+    async def previews_status(
+        self,
+        session_id: SessionId,
+        *,
+        port: int | None = None,
+        name: str | None = None,
+    ) -> PreviewActionResult:
+        data = await self._http.request(
+            "POST",
+            f"/api/sessions/{_sid(session_id)}/previews",
+            json=_prune({"action": "status", "port": port, "name": name}),
+        )
+        return PreviewActionResult.model_validate(data)
+
+    async def previews_logs(
+        self,
+        session_id: SessionId,
+        *,
+        port: int | None = None,
+        name: str | None = None,
+        tail: int = 200,
+    ) -> Any:
         return await self._http.request(
-            "GET",
-            f"/api/sessions/{_sid(session_id)}/serve/logs",
-            params={"tail": tail},
+            "POST",
+            f"/api/sessions/{_sid(session_id)}/previews",
+            json=_prune({"action": "logs", "port": port, "name": name, "tail": tail}),
         )
+
+    async def previews_batch_start(
+        self,
+        session_id: SessionId,
+        previews: builtins.list[PreviewSpec | dict[str, Any]],
+    ) -> PreviewBatchResult:
+        data = await self._http.request(
+            "POST",
+            f"/api/sessions/{_sid(session_id)}/previews",
+            json={
+                "action": "batch_start",
+                "previews": [_spec_payload(s) for s in previews],
+            },
+        )
+        return PreviewBatchResult.model_validate(data)
 
 
 __all__ = ["AsyncSessions", "SessionId", "Sessions"]

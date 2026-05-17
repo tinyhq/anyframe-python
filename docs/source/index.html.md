@@ -51,6 +51,42 @@ This is the <strong>Python</strong> SDK reference. For Node, REST, and CLI, see 
 
 # Quickstart
 
+## Take over a web session
+
+```python
+import anyframe
+
+af = anyframe.AnyFrame()
+
+# Grab the session id from the web UI's URL, or list and pick one:
+session = next(s for s in af.sessions.list() if s.status == "running")
+
+# Send a turn - same channel the web UI uses.
+af.sessions.message(session.id, {"text": "summarize what you've done so far"})
+
+# Watch the agent respond. Ctrl-C when you've seen enough.
+for event in af.sessions.events(session.id):
+    print(event.event, event.json())
+```
+
+```shell
+export ANYFRAME_API_KEY=afm_...
+python takeover.py
+```
+
+Already have an agent and session running in the web UI? Skip building and just talk to it.
+
+1. **Construct the client.** Reads `ANYFRAME_API_KEY` from the environment (or a `.env` file).
+2. **Find the session.** Use `af.sessions.list()`, or paste the session id straight from the web URL.
+3. **Send a turn.** `af.sessions.message()` posts to the same chat channel the web UI uses - both clients stay in sync.
+4. **Stream the reply.** `af.sessions.events()` is a live SSE iterator. Loop until you've seen enough; the session keeps running on the server after you disconnect.
+
+<aside class="notice">
+If the session shows status <code>terminated</code> or <code>paused</code>, call <code>af.sessions.resume(session.id)</code> first, then <code>wait_until_running</code>.
+</aside>
+
+## Build a fresh agent from scratch
+
 ```python
 import anyframe
 

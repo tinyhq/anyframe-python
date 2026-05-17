@@ -45,10 +45,32 @@ Working with **private repos**? Also set a GitHub PAT once - in the dashboard's 
 
 ## Quickstart
 
+### Take over a web session
+
+Already have a session running in the web UI? Attach to it and take a turn:
+
 ```python
 import anyframe
 
-af = anyframe.AnyFrame()          # reads ANYFRAME_API_KEY + ANYFRAME_BASE_URL
+af = anyframe.AnyFrame()                        # reads ANYFRAME_API_KEY + ANYFRAME_BASE_URL
+
+# Grab the session id from the web URL, or list and pick one:
+session = next(s for s in af.sessions.list() if s.status == "running")
+
+af.sessions.message(session.id, {"text": "summarize what you've done so far"})
+
+for event in af.sessions.events(session.id):    # live SSE; Ctrl-C when done
+    print(event.event, event.json())
+```
+
+`message` and `events` proxy verbatim to the in-sandbox chat - the web UI and the SDK are two clients on the same channel.
+
+### Build a fresh agent from scratch
+
+```python
+import anyframe
+
+af = anyframe.AnyFrame()
 
 agent = af.agents.create(name="demo", repo_url="tinyhq/box", install_cmd="bun install")
 af.agents.build(agent.id)

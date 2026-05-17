@@ -74,6 +74,37 @@ a:hover {
       color: $af-text-muted;
       &:hover { color: $af-text; }
     }
+
+    // Icon row for GitHub / Discord — sit side by side, neutral chrome.
+    .social-row {
+      display: flex;
+      gap: 6px;
+      padding: 4px 0;
+    }
+    .social-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border: 1px solid $af-border;
+      border-radius: 6px;
+      color: $af-text-secondary;
+      font-size: 12px;
+      line-height: 1;
+      transition: color 120ms ease, border-color 120ms ease, background 120ms ease;
+
+      svg {
+        flex: 0 0 auto;
+        display: block;
+      }
+
+      &:hover {
+        color: $af-text;
+        border-color: $af-border-heavy;
+        background: $af-surface-2;
+        border-bottom-color: $af-border-heavy;
+      }
+    }
   }
 }
 

@@ -19,6 +19,7 @@ from dotenv import load_dotenv as _dotenv_load
 
 from ._http import SyncHTTP
 from .agents import Agents
+from .attention import Attention
 from .connectors import Connectors
 from .credentials import Credentials
 from .exceptions import AuthError
@@ -111,6 +112,7 @@ class AnyFrame:
         self.connectors = Connectors(self._http)
         self.agents = Agents(self._http)
         self.sessions = Sessions(self._http)
+        self.attention = Attention(self._http)
 
     # ── identity ──────────────────────────────────────────────────────────
 

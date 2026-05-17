@@ -19,6 +19,7 @@ from dotenv import load_dotenv as _dotenv_load
 
 from ._http import AsyncHTTP
 from .agents import AsyncAgents
+from .attention import AsyncAttention
 from .client import (
     DEFAULT_BASE_URL,
     ENV_API_KEY,
@@ -87,6 +88,7 @@ class AsyncAnyFrame:
         self.connectors = AsyncConnectors(self._http)
         self.agents = AsyncAgents(self._http)
         self.sessions = AsyncSessions(self._http)
+        self.attention = AsyncAttention(self._http)
 
     # ── identity ──────────────────────────────────────────────────────────
 

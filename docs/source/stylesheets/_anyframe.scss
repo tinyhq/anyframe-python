@@ -340,13 +340,17 @@ a:hover {
   padding-bottom: 80px;
 }
 
-// Architecture / lifecycle diagrams — full-width prose blocks, soft card.
+// Architecture / lifecycle diagrams — shrink-wrap the box and centre it.
+// fit-content + margin-x auto keeps the diagram's visual mass in the
+// middle of the column rather than glued to the left edge.
 .content pre.diagram {
   background: $af-surface !important;
   color: $af-text-secondary !important;
   border: 1px solid $af-border;
   border-radius: 10px;
-  margin: 28px 32px !important;
+  width: fit-content;
+  max-width: 100%;
+  margin: 28px auto !important;
   padding: 22px 28px !important;
   font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
   font-size: 12px !important;
@@ -354,6 +358,7 @@ a:hover {
   white-space: pre;
   overflow-x: auto;
   text-shadow: none;
+  box-sizing: border-box;
 }
 
 @media (max-width: 670px) {

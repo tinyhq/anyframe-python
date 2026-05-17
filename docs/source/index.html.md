@@ -89,6 +89,40 @@ Already have an agent and session running in the web UI? Skip building and just 
 If the session shows status <code>terminated</code> or <code>paused</code>, call <code>af.sessions.resume(session.id)</code> first, then <code>wait_until_running</code>.
 </aside>
 
+## Power a chat widget on your site
+
+```python
+import anyframe
+
+af = anyframe.AsyncAnyFrame()  # async client - this is a hot path
+
+async def on_visitor_message(session_id: int, text: str):
+    # Forward each visitor turn to the agent's chat bridge.
+    await af.sessions.message(session_id, {"prompt": text})
+
+    # Stream the reply back to the browser as SSE. last_event_id lets
+    # the browser resume mid-stream after a reconnect.
+    async for event in af.sessions.events(session_id):
+        yield event.json()
+```
+
+```shell
+# A drop-in deployable reference of this pattern:
+# https://github.com/tinyhq/anyframe-web-chat
+git clone https://github.com/tinyhq/anyframe-web-chat
+```
+
+A common use of the SDK: stand up a per-visitor chat widget on your own site, backed by your agent.
+
+1. **Use the async client.** Chat is fan-out heavy; `AsyncAnyFrame` lets one process serve many concurrent visitors via `asyncio.gather` / FastAPI.
+2. **One session per visitor.** Boot once with `af.sessions.create(agent_id=...)`, store the `session_id` against a signed visitor cookie, reuse it on every reload.
+3. **`message` to send, `events` to receive.** Posts to the in-sandbox chat bridge; the SSE stream replays history (pass `last_event_id`) and tails new turns.
+4. **Keep the API key server-side.** The browser only ever sees your origin; only your server holds the `afm_` token.
+
+<aside class="notice">
+There's a ready-to-deploy reference implementation at <a href="https://github.com/tinyhq/anyframe-web-chat"><code>tinyhq/anyframe-web-chat</code></a>: drop-in <code>&lt;script&gt;</code> tag for your site, signed visitor cookies, per-visitor + per-IP rate limits, SQLite session map. Fork it, fill in <code>ANYFRAME_API_KEY</code> and <code>ANYFRAME_AGENT_ID</code>, deploy.
+</aside>
+
 ## Build a fresh agent from scratch
 
 ```python
@@ -124,7 +158,11 @@ Five steps from `import` to a running sandbox.
 
 > The five-step flow is intentional. You can call any step out of order - `build()` without `create()` errors clearly; `wait_until_running` on a never-created id returns 404 via `NotFoundError`.
 
-# Installation
+# Setup
+
+Installation, API key, and authentication — the three things that have to be true before any other SDK call works.
+
+## Install
 
 ```shell
 uv add anyframe
@@ -146,7 +184,7 @@ The SDK ships with PEP 561 typing markers (`py.typed`), so `mypy` and `pyright` 
 | pydantic | `>= 2.6` |
 | python-dotenv | `>= 1.0` |
 
-# Get an API key
+## Get an API key
 
 ```shell
 # 1. Sign in at https://anyfrm.com
@@ -175,7 +213,7 @@ Already authed in another script? `af.tokens.create(name=...)` returns a fresh t
 <strong>Working with private repos?</strong> The control plane also needs a GitHub PAT. Set it once in the dashboard's Credentials page, or call <code>af.credentials.set_github("ghp_...")</code>. See <a href="#credentials">Credentials</a>.
 </aside>
 
-# Authentication
+## Authentication
 
 ```python
 import anyframe
@@ -208,7 +246,7 @@ If none of these resolve, the constructor raises `AuthError`.
 <strong>Base URL.</strong> Defaults to <code>https://api.anyfrm.com</code>. Override with the <code>base_url=</code> kwarg or <code>ANYFRAME_BASE_URL</code> for self-hosted deployments.
 </aside>
 
-## Environment variables
+### Environment variables
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
@@ -216,7 +254,7 @@ If none of these resolve, the constructor raises `AuthError`.
 | `ANYFRAME_BASE_URL` | `https://api.anyfrm.com` | Control-plane URL. |
 | `ANYFRAME_LOG_LEVEL` | `INFO` | `DEBUG` enables per-request tracing. |
 
-## .env loading
+### .env loading
 
 ```python
 # Library code that shouldn't touch the user's environment:
@@ -227,7 +265,11 @@ By default the SDK auto-loads a `.env` file from the current working directory (
 
 Pass `load_dotenv=False` when embedding the SDK inside a library that shouldn't reach into the host environment.
 
-# Mental model
+# Concepts
+
+Two foundations before the reference: the *mental model* (the objects you'll touch and how they nest) and the *client* (how you instantiate the SDK and what's hanging off it).
+
+## Mental model
 
 ```python
 # The objects you'll touch, in dependency order:
@@ -281,7 +323,7 @@ Before reading the reference, six concepts:
         └─────────────────────────────────────────┘
 </pre>
 
-# The client
+## The client
 
 ```python
 import anyframe
@@ -319,7 +361,7 @@ af.attention      # Items needing the operator (pending / idle / paused)
 
 `AnyFrame` and `AsyncAnyFrame` are the entry points. Both share the same constructor signature and the same resource attributes, so you can write code once and swap clients.
 
-## Constructor parameters
+### Constructor parameters
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -328,7 +370,7 @@ af.attention      # Items needing the operator (pending / idle / paused)
 | `timeout` | `float` | `30.0` | Per-request timeout in seconds. |
 | `load_dotenv` | `bool` | `True` | Auto-load `.env` from the working directory before reading env vars. |
 
-## Identity
+### Identity
 
 ```python
 me = af.me()
@@ -337,7 +379,7 @@ me = af.me()
 
 `me()` returns the authenticated `User` record. Use it as a probe to confirm the API key works without touching the rest of the surface.
 
-## Lifecycle
+### Lifecycle
 
 ```python
 af = anyframe.AnyFrame()
@@ -357,7 +399,11 @@ The client holds an internal `httpx` connection pool. Always close it - either w
 
 For the async client, the equivalent is `await af.aclose()` / `async with AsyncAnyFrame() as af`.
 
-# Agents
+# Reference
+
+The full surface, in dependency order: agents → builds → sessions, with connectors / credentials / tokens managing the cross-cutting state, and streaming + async covering the two protocols you'll wrap them in.
+
+## Agents
 
 ```python
 # Create
@@ -381,7 +427,7 @@ af.agents.delete(agent.id)               # cascades to sessions + builds
 
 Agents are the reusable config layer. The fields you set here are baked into every session this agent boots.
 
-## Create
+### Create an agent
 
 ```python
 agent = af.agents.create(
@@ -405,7 +451,7 @@ agent = af.agents.create(
 | `permissions` | <code>dict &#124; None</code> | Permissions preset (see dashboard). |
 | `env_vars` | <code>dict[str, str] &#124; None</code> | Env vars injected into every session. Keys must match `[A-Z_][A-Z0-9_]*`. Values encrypted at rest, masked in responses. |
 
-## Build
+### Build
 
 ```python
 queued = af.agents.build(agent.id)
@@ -424,7 +470,7 @@ Builds are cached by `(repo_url, repo_ref, install_cmd)`. Pass `force=True` to r
 
 `wait_for_build` polls `build_status` until the build reaches a terminal state. It raises `AnyFrameError` on `failed` and `TimeoutError` if the deadline is exceeded.
 
-## Skills, MCPs, Connectors
+### Skills, MCPs, Connectors
 
 ```python
 # Skills - Claude Code skills (markdown with frontmatter)
@@ -458,7 +504,7 @@ Each agent ships with three nested resource managers:
 - `agent.mcps` - MCP servers, agent-scoped (use when sharing isn't useful).
 - `agent.connectors` - toggles for user-scoped connectors (see [Connectors](#connectors)).
 
-# Sessions
+## Sessions
 
 ```python
 # Boot
@@ -478,7 +524,7 @@ af.sessions.delete(session.id)                 # hard-delete the row
 
 Sessions are sandboxes. Boot one, talk to it, snapshot it, throw it away.
 
-## Lifecycle
+### Session lifecycle
 
 <pre class="diagram">
                   create()
@@ -506,7 +552,7 @@ Sessions are sandboxes. Boot one, talk to it, snapshot it, throw it away.
 
 `wait_until_running` blocks until the session reaches `running` or hits a terminal non-running state. It raises `TimeoutError` if neither happens within `timeout=180.0` seconds.
 
-## Create
+### Create a session
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -515,7 +561,7 @@ Sessions are sandboxes. Boot one, talk to it, snapshot it, throw it away.
 | `unsafe` | `bool` | `False` | Pass `--dangerously-skip-permissions` to Claude. **Leave off.** |
 | `resume_from_snapshot_id` | <code>int &#124; None</code> | `None` | Hydrate from a snapshot instead of booting fresh. |
 
-## Chat
+### Chat
 
 ```python
 # Send a message - body is forwarded verbatim to the in-sandbox chat bridge
@@ -538,7 +584,7 @@ The chat bridge speaks two flavours of API:
 - **`message` / `respond`** - POST endpoints. The body is forwarded verbatim to the in-sandbox chat server, so the exact schema lives there.
 - **`transcript` / `events`** - replay vs subscribe. `transcript` returns persisted events ordered by `seq`. `events` streams them live as SSE - pass `last_event_id` to resume from a checkpoint.
 
-## Previews (in-sandbox dev servers)
+### Previews (in-sandbox dev servers)
 
 ```python
 # Start one preview - port is optional; the control plane picks from
@@ -569,7 +615,7 @@ Launch dev servers inside the sandbox and tunnel their ports out. Multiple previ
 | `previews_logs` | `logs` | raw JSON (`{"lines": [...]}`) |
 | `previews_batch_start` | `batch_start` | `PreviewBatchResult` |
 
-## Setup sessions (`save_as_base`)
+### Setup sessions (`save_as_base`)
 
 ```python
 session = af.sessions.create(agent_id=agent.id, is_setup_session=True)
@@ -581,7 +627,7 @@ result = af.sessions.save_as_base(session.id)
 
 Setup sessions are user-driven sandboxes you use to clone, install, and warm caches before promoting the result to the agent's *warmup image*. Future normal sessions for the same agent hydrate from the promoted snapshot. Setup sessions can re-promote multiple times - each call overwrites the saved base.
 
-## Snapshots
+### Snapshots
 
 ```python
 snapshots = af.sessions.snapshots(session.id)
@@ -590,7 +636,7 @@ af.sessions.resume(latest_snapshot_session_id)
 
 Snapshots happen automatically on idle. Each captures the filesystem and chat state. Resume from any snapshot to fork a session.
 
-# Connectors
+## Connectors
 
 ```python
 # User-scoped: configure once, reuse across agents
@@ -619,7 +665,7 @@ Connectors are user-scoped MCP registrations. Configure them once, then flip the
 - **OAuth 2.0** - `create_oauth` returns an authorization URL; the user finishes the flow in a browser.
 - **Bearer** - `create_bearer` accepts a token directly. Use for tokens you've already minted out-of-band.
 
-## Catalog
+### Catalog
 
 ```python
 catalog = af.connectors.list_catalog()       # ConnectorCatalogItem[]
@@ -633,7 +679,7 @@ af.connectors.install_catalog_bearer("sentry", token="sntrys_...")
 
 The control plane ships a curated catalog (Linear, Sentry, Google, …). Each entry's `setup_kind` (`oauth_dcr`, `oauth_preregistered`, `bearer_token`, `custom_mcp`) tells you which install method to call. Entries with `coming_soon=True` reject install attempts.
 
-## Attention rail
+### Attention rail
 
 ```python
 for item in af.attention.list(limit=20):
@@ -650,7 +696,7 @@ for item in af.attention.list(limit=20):
 
 `af.attention.list()` returns the rail's curated, newest-first list of items needing the operator. Three discriminated-union members - `AttentionPendingItem`, `AttentionIdleItem`, `AttentionPausedItem` - share the same parent type `AttentionItem`. Pending always sorts above idle and paused.
 
-# Credentials
+## Credentials
 
 ```python
 view = af.credentials.get()
@@ -675,7 +721,7 @@ The control plane stores up to three credentials per user:
 
 The SDK only ever surfaces redacted views (`set=True` + `last4=...`). Plaintext leaves your machine once, when you call `set_*`. Older control planes that pre-date the Codex runtime omit the `codex` key from the response; the SDK parses those responses with `codex.set=False`.
 
-# Tokens
+## Tokens
 
 ```python
 af.tokens.list()
@@ -693,7 +739,7 @@ API tokens are how the SDK authenticates. `create()` is the one moment the raw t
 <strong>Store the token immediately.</strong> The plaintext is returned exactly once. There is no recovery path - revoke and re-mint if you lose it.
 </aside>
 
-# Streaming (SSE)
+## Streaming (SSE)
 
 ```python
 # Stream a live build log
@@ -722,7 +768,7 @@ Both return an iterator of `SSEEvent`. Each event has `.id`, `.event`, `.data` (
 SSE streams are <strong>long-lived</strong>. Keep them on a dedicated request and don't hold other locks for the duration.
 </aside>
 
-# Async
+## Async
 
 ```python
 import asyncio
@@ -750,7 +796,11 @@ Use it when:
 - You're inside an existing `asyncio` event loop (FastAPI, aiohttp, etc.).
 - You need to fan out many calls in parallel - `asyncio.gather()` over `AsyncAnyFrame` calls is the right primitive.
 
-# Configuration reference
+# Help
+
+Settings reference, error taxonomy, and where to ask when something doesn't add up.
+
+## Configuration reference
 
 | Env var | Constructor kwarg | Default | Purpose |
 | --- | --- | --- | --- |
@@ -767,7 +817,7 @@ logging.getLogger("anyframe").setLevel(logging.DEBUG)
 
 The SDK logs under the `anyframe` logger. Set `ANYFRAME_LOG_LEVEL=DEBUG` for one-line traces of every request (method, path, status, elapsed ms).
 
-# Errors
+## Errors
 
 ```python
 import anyframe
@@ -813,7 +863,7 @@ Every HTTP error rises through `AnyFrameError`, so one `except` catches the enti
 <strong>Retries are not built in.</strong> The SDK is intentionally thin. Wrap calls in <code>tenacity</code> (or your retry library of choice) and key your retry policy off the exception classes above - most of them you'd never want to retry on.
 </aside>
 
-# Support
+## Support
 
 ```python
 import anyframe

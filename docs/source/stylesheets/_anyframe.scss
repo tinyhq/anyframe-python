@@ -1,0 +1,380 @@
+/*
+  AnyFrame fine-grained overrides on top of Slate's screen.css.
+
+  Everything here is stuff the _variables.scss surface can't express:
+  link colour, callout left-borders, search input chrome, scrollbar
+  styling, tighter radii, header weights. Kept narrow on purpose — if
+  it can live in _variables.scss, it should live there.
+*/
+
+@import 'variables';
+
+
+// Link colour — Signal Blue, the one accent.
+a,
+a:visited {
+  color: $af-brand;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 120ms ease, color 120ms ease;
+}
+a:hover {
+  color: $af-brand-hover;
+  border-bottom-color: $af-brand-hover;
+}
+
+// TOC: brand-tinted active state, no left bar.
+.toc-wrapper {
+  border-right: 1px solid $af-border;
+  font-feature-settings: "ss01" on;
+
+  // Text wordmark — replaces Slate's default logo image. Mono-Logo Rule:
+  // the AnyFrame mark renders only in white on dark surfaces.
+  a.logo {
+    display: block;
+    padding: 22px 18px 18px;
+    margin: 0 0 8px 0;
+    border-bottom: 1px solid $af-border;
+    color: $af-text;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    text-decoration: none;
+
+    &:hover { color: $af-text; border-bottom-color: $af-border; }
+
+    .logo-suffix {
+      color: $af-text-muted;
+      font-weight: 500;
+    }
+  }
+
+  // Make uppercase eyebrow text feel like our "Label" type.
+  .toc-h1.toc-link,
+  .toc-h2.toc-link {
+    font-weight: 500;
+    letter-spacing: -0.005em;
+  }
+
+  .toc-link.active {
+    color: $af-brand !important;
+    background: $af-brand-subtle;
+    box-shadow: inset 2px 0 0 0 $af-brand;
+  }
+
+  .toc-list-h2 {
+    background: $af-bg;
+  }
+
+  .toc-footer {
+    border-top: 1px solid $af-border;
+
+    a {
+      color: $af-text-muted;
+      &:hover { color: $af-text; }
+    }
+  }
+}
+
+// Search input — flat dark, brand focus ring.
+.search input {
+  background: $af-bg;
+  border: 1px solid $af-border;
+  border-radius: 6px;
+  color: $af-text;
+  padding: 8px 12px;
+  font-family: inherit;
+  font-size: 13px;
+
+  &::placeholder { color: $af-text-muted; }
+  &:focus {
+    outline: none;
+    border-color: $af-brand;
+    box-shadow: 0 0 0 3px $af-brand-subtle;
+  }
+}
+.search-results {
+  background: $af-surface-2;
+  border-top: 1px solid $af-border;
+
+  li a {
+    color: $af-text-secondary;
+    &:hover { color: $af-brand; background: $af-brand-subtle; }
+  }
+}
+
+// Content column.
+.page-wrapper {
+  background: $af-bg;
+}
+
+.content {
+  h1, h2, h3, h4, h5, h6 {
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: $af-text;
+    border: 0;
+    background: transparent;
+    text-shadow: none;
+  }
+
+  h1 {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+    margin-top: 56px;
+    margin-bottom: 18px;
+    padding-bottom: 18px;
+    // Heavier than $af-border so section breaks read on the dark stage.
+    border-bottom: 1px solid $af-border-heavy;
+  }
+  h1:first-child,
+  .h1:first-child { margin-top: 0; }
+
+  h2 {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    margin-top: 40px;
+    padding-top: 0;
+    border-top: 0;
+  }
+  h3 {
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    color: $af-text;
+    margin-top: 28px;
+  }
+  h4, h5, h6 {
+    font-size: 14px;
+    font-weight: 600;
+    color: $af-text-secondary;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    margin-top: 20px;
+  }
+
+  p, li, dt, dd { color: $af-text-secondary; }
+  p strong, li strong { color: $af-text; }
+
+  // Inline code — pill on a darker tone, no border.
+  code {
+    background: $af-surface-2;
+    color: $af-text;
+    border: 1px solid $af-border;
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 12.5px;
+  }
+  pre code {
+    border: 0;
+    padding: 0;
+    background: transparent;
+  }
+
+  // Tables — terminal-tight.
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 16px 0;
+    font-size: 13px;
+
+    th {
+      background: $af-surface-2;
+      color: $af-text;
+      border-bottom: 1px solid $af-border-heavy;
+      padding: 10px 12px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-family: "JetBrains Mono", ui-monospace, monospace;
+    }
+    td {
+      border-bottom: 1px solid $af-border;
+      padding: 10px 12px;
+      color: $af-text-secondary;
+      background: transparent !important; // override Slate's nth-child stripes
+    }
+    // Slate has a light-grey `tr:last-child{border-bottom:1px solid #ccc}` rule
+    // we need to neutralise — otherwise a pale line floats under each table.
+    tr:last-child { border-bottom: 0; }
+    tr:last-child td { border-bottom: 0; }
+    tr:hover td { background: $af-surface !important; }
+  }
+
+  // Blockquote styling lives in the single-column overrides at the bottom
+  // of this file (Slate's default treatment is incompatible with our layout).
+
+  // Asides — Signal Blue / Warning / Success / Danger.
+  aside {
+    border-radius: 8px;
+    border: 1px solid $af-border;
+    padding: 14px 18px;
+    color: $af-text-secondary;
+    background: $af-surface;
+
+    a { color: $af-brand; }
+
+    &.notice {
+      border-left: 3px solid $af-info;
+      background: rgba(96, 165, 250, 0.06);
+    }
+    &.warning {
+      border-left: 3px solid $af-warning;
+      background: rgba(251, 191, 36, 0.06);
+    }
+    &.success {
+      border-left: 3px solid $af-success;
+      background: rgba(74, 222, 128, 0.06);
+    }
+  }
+
+  // hr — barely-there divider.
+  hr {
+    border: 0;
+    border-top: 1px solid $af-border;
+    margin: 32px 0;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// Single-column layout — overrides Slate's two-column (prose | code rail)
+// ═══════════════════════════════════════════════════════════════════════
+//
+// Slate floats every <pre> and <blockquote> into a 50%-wide right rail,
+// and reserves the left 50% for prose by setting `margin-right: 50%` on
+// every prose block. That works for short balanced sections (Stripe-style
+// API ref) but creates massive vertical gaps when one column is much
+// taller than the other — which is our case. We collapse everything into
+// a single, centred column with inline code blocks.
+
+// Hide the right-rail background panel and the fixed top-right tab strip.
+.page-wrapper .dark-box,
+.page-wrapper > .lang-selector {
+  display: none !important;
+}
+
+// Stop reserving the right half of every prose block.
+.content > h1,
+.content > h2,
+.content > h3,
+.content > h4,
+.content > h5,
+.content > h6,
+.content > p,
+.content > table,
+.content > ul,
+.content > ol,
+.content > aside,
+.content > dl,
+.content > div,
+.content > pre,
+.content > blockquote {
+  margin-right: 0 !important;
+}
+
+// Code blocks become full-width inline blocks in the flow.
+.content pre,
+.content blockquote {
+  width: auto !important;
+  float: none !important;
+  clear: both !important;
+}
+
+.content pre {
+  background: $af-surface-2 !important;
+  color: $af-text !important;
+  border: 1px solid $af-border;
+  border-radius: 8px;
+  margin: 18px 32px !important;
+  padding: 18px 22px !important;
+  font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 13px !important;
+  line-height: 1.7 !important;
+  overflow-x: auto;
+}
+
+// Blockquotes — prose callouts (used as "tip" boxes), not right-rail hints.
+.content blockquote {
+  background: $af-surface !important;
+  border: 1px solid $af-border !important;
+  border-left: 3px solid $af-border-heavy !important;
+  border-radius: 6px !important;
+  color: $af-text-secondary !important;
+  margin: 18px 32px !important;
+  padding: 12px 18px !important;
+}
+.content blockquote > p {
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  color: $af-text-secondary !important;
+  font-family: "Inter", -apple-system, sans-serif !important;
+  font-size: 14px !important;
+  text-transform: none !important;
+  letter-spacing: -0.005em !important;
+}
+
+// Centre the content column at a comfortable reading width.
+// (Page-wrapper already has margin-left: 260px for the TOC.)
+.content {
+  max-width: 880px;
+  margin: 0 auto;
+  padding-bottom: 80px;
+}
+
+// Architecture / lifecycle diagrams — full-width prose blocks, soft card.
+.content pre.diagram {
+  background: $af-surface !important;
+  color: $af-text-secondary !important;
+  border: 1px solid $af-border;
+  border-radius: 10px;
+  margin: 28px 32px !important;
+  padding: 22px 28px !important;
+  font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12px !important;
+  line-height: 1.5;
+  white-space: pre;
+  overflow-x: auto;
+  text-shadow: none;
+}
+
+@media (max-width: 670px) {
+  .content pre,
+  .content pre.diagram,
+  .content blockquote {
+    margin-left: 16px !important;
+    margin-right: 16px !important;
+  }
+}
+
+// "NAV" mobile toggle.
+#nav-button {
+  background: $af-surface;
+  border: 1px solid $af-border;
+  border-radius: 8px;
+  color: $af-text;
+  span { color: $af-text; }
+}
+
+// Copy-code button (Slate adds .copy-clipboard).
+.copy-clipboard {
+  filter: invert(0.7);
+  opacity: 0.6;
+  &:hover { opacity: 1; }
+}
+
+// Subtle scrollbars (WebKit only).
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: $af-bg; }
+::-webkit-scrollbar-thumb {
+  background: $af-border-heavy;
+  border-radius: 8px;
+  &:hover { background: $af-text-faint; }
+}

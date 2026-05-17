@@ -217,3 +217,7 @@ anyframe.AnyFrameError       # base
 ## License
 
 MIT.
+
+---
+
+Docs: [docs.anyfrm.com](https://docs.anyfrm.com) · Found a bug or have a question? [Join us on Discord](https://discord.gg/UpkEW6JjpU).

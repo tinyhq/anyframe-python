@@ -1,0 +1,120 @@
+/*
+  AnyFrame theme tokens for Slate.
+
+  Maps the san-francisco design system (Stage Black / Console Surface /
+  Signal Blue) onto Slate's variable surface. Slate's defaults assume a
+  light content column with a dark sidebar — we collapse both into the
+  same dark palette so the whole page reads as one "Mission Console".
+
+  Source of truth: /Users/<...>/box/san-francisco/DESIGN.md
+*/
+
+
+// AnyFrame design tokens
+////////////////////////////////////////////////////////////////////////////////
+
+$af-bg:               #0a0a0a;  // stage-black
+$af-surface:          #0d0d0d;  // console-surface
+$af-surface-2:        #111111;  // console-surface-2
+$af-border:           #1a1a1a;  // console-border
+$af-border-heavy:     #262626;  // console-border-heavy
+
+$af-text:             #ffffff;
+$af-text-secondary:   #9a9a9a;
+$af-text-muted:       #6a6a6a;
+$af-text-faint:       #3a3a3a;
+
+$af-brand:            #60a5fa;  // signal-blue
+$af-brand-hover:      #7cb3fc;
+$af-brand-subtle:     rgba(96, 165, 250, 0.08);
+
+$af-success:          #4ade80;
+$af-warning:          #fbbf24;
+$af-danger:           #f87171;
+$af-info:             #60a5fa;
+
+
+// Slate background slots
+////////////////////////////////////////////////////////////////////////////////
+$nav-bg:                $af-surface !default;
+$examples-bg:           $af-surface !default;
+$code-bg:               $af-surface-2 !default;
+$code-annotation-bg:    $af-bg !default;
+$nav-subitem-bg:        $af-bg !default;
+$nav-active-bg:         $af-brand-subtle !default;
+$nav-active-parent-bg:  $af-bg !default;
+$lang-select-border:    $af-border !default;
+$lang-select-bg:        $af-surface-2 !default;
+$lang-select-active-bg: $af-bg !default;
+$lang-select-pressed-bg:$af-bg !default;
+$main-bg:               $af-bg !default;
+$aside-notice-bg:       rgba(96, 165, 250, 0.10) !default;
+$aside-warning-bg:      rgba(251, 191, 36, 0.10) !default;
+$aside-success-bg:      rgba(74, 222, 128, 0.10) !default;
+$search-notice-bg:      rgba(248, 113, 113, 0.18) !default;
+
+
+// Slate text slots
+////////////////////////////////////////////////////////////////////////////////
+$main-text:                  $af-text !default;
+$nav-text:                   $af-text-secondary !default;
+$nav-active-text:            $af-brand !default;
+$nav-active-parent-text:     $af-text !default;
+$lang-select-text:           $af-text-secondary !default;
+$lang-select-active-text:    $af-text !default;
+$lang-select-pressed-text:   $af-text !default;
+
+
+// Sizes — kept close to Slate defaults; tightened a touch
+////////////////////////////////////////////////////////////////////////////////
+$nav-width:        260px !default;
+$examples-width:   50% !default;
+$logo-margin:      20px !default;
+$main-padding:     32px !default;
+$nav-padding:      18px !default;
+$nav-v-padding:    10px !default;
+$nav-indent:       12px !default;
+$code-annotation-padding: 13px !default;
+$h1-margin-bottom: 24px !default;
+$tablet-width:     930px !default;
+$phone-width:      $tablet-width - $nav-width !default;
+
+
+// Fonts — Inter + JetBrains Mono, matching the san-francisco system.
+// Loaded via Google Fonts in source/layouts/layout.erb.
+////////////////////////////////////////////////////////////////////////////////
+%default-font {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.005em;
+}
+
+%header-font {
+  @extend %default-font;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+%code-font {
+  font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, Monaco, monospace;
+  font-size: 12.5px;
+  line-height: 1.7;
+  font-variant-numeric: tabular-nums;
+}
+
+
+// Borders
+////////////////////////////////////////////////////////////////////////////////
+$nav-footer-border-color: $af-border !default;
+$search-box-border-color: $af-border !default;
+
+
+////////////////////////////////////////////////////////////////////////////////
+// INTERNAL
+////////////////////////////////////////////////////////////////////////////////
+%break-words {
+    word-break: break-all;
+    hyphens: auto;
+}

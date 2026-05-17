@@ -1,9 +1,10 @@
-"""Per-user Claude / GitHub credentials — ``/api/credentials``.
+"""Per-user Claude / Codex / GitHub credentials — ``/api/credentials``.
 
-The control plane needs a Claude OAuth token to run agents, and a GitHub
-PAT to clone private repos. This resource sets, clears, or inspects each
-one. The server never returns the raw tokens — :meth:`Credentials.get`
-returns a redacted view (``set`` flag, ``last4``, ``updated_at``).
+The control plane needs at least one runtime credential (Claude OAuth token
+or Codex token) to run agents, and a GitHub PAT to clone private repos. This
+resource sets, clears, or inspects each one. The server never returns the
+raw tokens — :meth:`Credentials.get` returns a redacted view (``set`` flag,
+``last4``, ``updated_at``).
 """
 
 from __future__ import annotations
@@ -17,7 +18,7 @@ if TYPE_CHECKING:  # pragma: no cover
 
 
 class Credentials:
-    """Manage the per-user Claude and GitHub credentials."""
+    """Manage the per-user Claude / Codex / GitHub credentials."""
 
     def __init__(self, http: SyncHTTP) -> None:
         self._http = http
@@ -28,8 +29,12 @@ class Credentials:
         return CredentialsModel.model_validate(data)
 
     def set_claude(self, token: str) -> None:
-        """Store a Claude OAuth token. Agents cannot run without one."""
+        """Store a Claude OAuth token. Agents on the Claude runtime cannot run without one."""
         self._http.request("PUT", "/api/credentials/claude", json={"token": token})
+
+    def set_codex(self, token: str) -> None:
+        """Store an OpenAI Codex token. Required for agents on the Codex runtime."""
+        self._http.request("PUT", "/api/credentials/codex", json={"token": token})
 
     def set_github(self, token: str) -> None:
         """Store a GitHub PAT. Required for cloning private repos / builds."""
@@ -38,6 +43,10 @@ class Credentials:
     def clear_claude(self) -> None:
         """Delete the stored Claude token."""
         self._http.request("DELETE", "/api/credentials/claude")
+
+    def clear_codex(self) -> None:
+        """Delete the stored Codex token."""
+        self._http.request("DELETE", "/api/credentials/codex")
 
     def clear_github(self) -> None:
         """Delete the stored GitHub token."""
@@ -57,11 +66,17 @@ class AsyncCredentials:
     async def set_claude(self, token: str) -> None:
         await self._http.request("PUT", "/api/credentials/claude", json={"token": token})
 
+    async def set_codex(self, token: str) -> None:
+        await self._http.request("PUT", "/api/credentials/codex", json={"token": token})
+
     async def set_github(self, token: str) -> None:
         await self._http.request("PUT", "/api/credentials/github", json={"token": token})
 
     async def clear_claude(self) -> None:
         await self._http.request("DELETE", "/api/credentials/claude")
+
+    async def clear_codex(self) -> None:
+        await self._http.request("DELETE", "/api/credentials/codex")
 
     async def clear_github(self) -> None:
         await self._http.request("DELETE", "/api/credentials/github")

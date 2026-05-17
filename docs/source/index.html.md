@@ -19,35 +19,30 @@ meta:
 
 <p class="anyframe-tagline">The official <strong>Python SDK for <a href="https://anyfrm.com">AnyFrame</a></strong> — a control plane for AI agent sandboxes. Point an agent at a repo, get a sandbox running Claude Code inside, and drive the whole lifecycle from Python.</p>
 
-```python
-import anyframe
-
-af = anyframe.AnyFrame()  # reads ANYFRAME_API_KEY from env / .env
-```
-
 ```shell
 uv add anyframe
 # or: pip install anyframe
 ```
 
-> The Python SDK is a thin, typed wrapper over the AnyFrame REST API. Same surface, same semantics, no extras.
+A thin, typed wrapper over the AnyFrame REST API. Same surface, same semantics, no extras. Targets Python 3.10+; ships fully typed (`py.typed`). Every sync method has an async counterpart on `AsyncAnyFrame` with the same signature.
 
-[AnyFrame](https://anyfrm.com) builds an image from your agent's repo and boots a sandbox running Claude Code inside. Your tools - Linear, Sentry, your dev server, your editor - connect to the sandbox over MCP, SSE, and HTTP.
-
-This SDK is the Python entry point to the control plane. Everything visible in the dashboard is callable here: agents, sessions, builds, connectors, credentials, tokens.
-
-<pre class="diagram">
-            ┌──────────────────────────────────────────┐
-            │  Agent (repo · system prompt · skills)   │
-            │      └── MCPs · Connector toggles        │
-   ┌─────┐  └────────────────────┬─────────────────────┘
-   │ you │  ─── anyframe SDK ──▶ │  build
-   └─────┘  ┌────────────────────▼─────────────────────┐
-            │  Session (sandbox · chat · serve)        │
-            └──────────────────────────────────────────┘
-</pre>
-
-The SDK targets Python 3.10+ and ships fully typed (`py.typed`). Every sync method has an async counterpart on `AsyncAnyFrame` with the same signature.
+<div class="next-cards">
+  <a class="next-card" href="#quickstart">
+    <span class="next-card-eyebrow">Get going</span>
+    <span class="next-card-title">Quickstart →</span>
+    <span class="next-card-desc">Three working recipes from <code>import</code> to a live sandbox.</span>
+  </a>
+  <a class="next-card" href="#concepts">
+    <span class="next-card-eyebrow">Learn the shape</span>
+    <span class="next-card-title">Concepts →</span>
+    <span class="next-card-desc">Agent, build, session, snapshot — and how they nest.</span>
+  </a>
+  <a class="next-card" href="#reference">
+    <span class="next-card-eyebrow">Look it up</span>
+    <span class="next-card-title">Reference →</span>
+    <span class="next-card-desc">Every resource manager, every method, with types.</span>
+  </a>
+</div>
 
 <aside class="notice">
 This is the <strong>Python</strong> SDK reference. For Node, REST, and CLI, see the docs at <a href="https://anyfrm.com/docs">anyfrm.com/docs</a>.
@@ -266,6 +261,19 @@ By default the SDK auto-loads a `.env` file from the current working directory (
 Pass `load_dotenv=False` when embedding the SDK inside a library that shouldn't reach into the host environment.
 
 # Concepts
+
+[AnyFrame](https://anyfrm.com) builds an image from your agent's repo and boots a sandbox running Claude Code inside. Your tools — Linear, Sentry, your dev server, your editor — connect to the sandbox over MCP, SSE, and HTTP. This SDK is the Python entry point to that control plane: everything visible in the dashboard is callable here.
+
+<pre class="diagram">
+            ┌──────────────────────────────────────────┐
+            │  Agent (repo · system prompt · skills)   │
+            │      └── MCPs · Connector toggles        │
+   ┌─────┐  └────────────────────┬─────────────────────┘
+   │ you │  ─── anyframe SDK ──▶ │  build
+   └─────┘  ┌────────────────────▼─────────────────────┐
+            │  Session (sandbox · chat · serve)        │
+            └──────────────────────────────────────────┘
+</pre>
 
 Two foundations before the reference: the *mental model* (the objects you'll touch and how they nest) and the *client* (how you instantiate the SDK and what's hanging off it).
 

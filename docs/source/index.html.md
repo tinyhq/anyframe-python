@@ -15,6 +15,10 @@ meta:
 
 # Welcome
 
+<div id="anyframe-fleet" class="anyframe-fleet"></div>
+
+<p class="anyframe-tagline">The official <strong>Python SDK for <a href="https://anyfrm.com">AnyFrame</a></strong> — a control plane for AI agent sandboxes. Point an agent at a repo, get a sandbox running Claude Code inside, and drive the whole lifecycle from Python.</p>
+
 ```python
 import anyframe
 
@@ -28,7 +32,7 @@ uv add anyframe
 
 > The Python SDK is a thin, typed wrapper over the AnyFrame REST API. Same surface, same semantics, no extras.
 
-[AnyFrame](https://anyfrm.com) is a control plane for AI agent sandboxes. You point an agent at a repo, AnyFrame builds an image and boots a sandbox running Claude Code inside, and your tools - Linear, Sentry, your dev server, your editor - connect to the sandbox over MCP, SSE, and HTTP.
+[AnyFrame](https://anyfrm.com) builds an image from your agent's repo and boots a sandbox running Claude Code inside. Your tools - Linear, Sentry, your dev server, your editor - connect to the sandbox over MCP, SSE, and HTTP.
 
 This SDK is the Python entry point to the control plane. Everything visible in the dashboard is callable here: agents, sessions, builds, connectors, credentials, tokens.
 

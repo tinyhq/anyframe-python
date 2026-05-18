@@ -15,9 +15,9 @@ meta:
 
 # Welcome
 
-<div id="anyframe-fleet" class="anyframe-fleet"></div>
-
 <p class="anyframe-tagline">The official <strong>Python SDK for <a href="https://anyfrm.com">AnyFrame</a></strong> — a control plane for AI agent sandboxes. Point an agent at a repo, get a sandbox running Claude Code inside, and drive the whole lifecycle from Python.</p>
+
+<div id="anyframe-fleet" class="anyframe-fleet"></div>
 
 ```shell
 uv add anyframe
@@ -49,6 +49,8 @@ This is the <strong>Python</strong> SDK reference. For Node, REST, and CLI, see 
 </aside>
 
 # Quickstart
+
+Three recipes, ordered by what most people do first: jump into a session that's already running in the dashboard, stand up a chat widget on your site, or build a brand-new agent from a repo.
 
 ## Take over a web session
 

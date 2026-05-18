@@ -185,28 +185,32 @@ a:hover {
     text-shadow: none;
   }
 
-  // Section breaks rely on whitespace, not a rule line — keeps the page
-  // calm and avoids the underline-vs-next-heading collision the old
-  // border-bottom caused.
+  // Category headings get a thin top divider so the eye reads them as
+  // section breaks even without an underline below the text. Whitespace
+  // alone wasn't enough — H1 + H2 stacked too close to look distinct.
   h1 {
     font-size: 36px;
     font-weight: 700;
     letter-spacing: -0.028em;
     line-height: 1.1;
-    margin-top: 72px;
-    margin-bottom: 22px;
-    padding-bottom: 0;
-    border-bottom: 0;
+    margin-top: 80px;
+    margin-bottom: 28px;
+    padding-top: 36px;
+    border-top: 1px solid $af-border;
   }
   h1:first-child,
-  .h1:first-child { margin-top: 0; }
+  .h1:first-child {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+  }
 
   h2 {
     font-size: 23px;
     font-weight: 650;
     letter-spacing: -0.018em;
     line-height: 1.25;
-    margin-top: 44px;
+    margin-top: 56px;
     margin-bottom: 14px;
     padding-top: 0;
     border-top: 0;

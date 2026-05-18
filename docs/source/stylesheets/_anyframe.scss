@@ -50,10 +50,17 @@ a:hover {
     }
   }
 
-  // Make uppercase eyebrow text feel like our "Label" type.
-  .toc-h1.toc-link,
+  // Category names — bolder, slightly larger, brand colour on the active
+  // one. The sub-items (H2) sit muted underneath so the eye lands on
+  // the category first.
+  .toc-h1.toc-link {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    color: $af-text;
+  }
   .toc-h2.toc-link {
-    font-weight: 500;
+    font-weight: 400;
     letter-spacing: -0.005em;
   }
 
@@ -182,12 +189,12 @@ a:hover {
   // calm and avoids the underline-vs-next-heading collision the old
   // border-bottom caused.
   h1 {
-    font-size: 32px;
+    font-size: 36px;
     font-weight: 700;
-    letter-spacing: -0.025em;
-    line-height: 1.15;
-    margin-top: 64px;
-    margin-bottom: 20px;
+    letter-spacing: -0.028em;
+    line-height: 1.1;
+    margin-top: 72px;
+    margin-bottom: 22px;
     padding-bottom: 0;
     border-bottom: 0;
   }
@@ -195,33 +202,40 @@ a:hover {
   .h1:first-child { margin-top: 0; }
 
   h2 {
-    font-size: 22px;
-    font-weight: 600;
-    letter-spacing: -0.015em;
+    font-size: 23px;
+    font-weight: 650;
+    letter-spacing: -0.018em;
     line-height: 1.25;
-    margin-top: 36px;
-    margin-bottom: 12px;
+    margin-top: 44px;
+    margin-bottom: 14px;
     padding-top: 0;
     border-top: 0;
   }
   h3 {
-    font-size: 17px;
+    font-size: 16px;
     font-weight: 600;
     letter-spacing: -0.005em;
     color: $af-text;
-    margin-top: 28px;
+    margin-top: 30px;
+    margin-bottom: 10px;
   }
   h4, h5, h6 {
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 600;
-    color: $af-text-secondary;
+    color: $af-text-muted;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.08em;
     font-family: "JetBrains Mono", ui-monospace, monospace;
-    margin-top: 20px;
+    margin-top: 22px;
   }
 
-  p, li, dt, dd { color: $af-text-secondary; }
+  // Body prose: bumped to 15px / 1.7 — the previous 14px / 1.6 was
+  // visibly cramped at the column width we use.
+  p, li, dt, dd {
+    color: $af-text-secondary;
+    font-size: 15px;
+    line-height: 1.7;
+  }
   p strong, li strong { color: $af-text; }
 
   // Inline code — pill on a darker tone, no border.
@@ -361,14 +375,14 @@ a:hover {
   color: $af-text !important;
   border: 1px solid $af-border;
   border-radius: 8px;
-  // Width matches H1/H2/p (which span the full .content box). Side margins
-  // collapsed to 0 so the code container's left/right edges line up with the
-  // H1 underline and the body paragraphs — same gutter everywhere.
-  margin: 18px 0 !important;
-  padding: 18px 22px !important;
+  // Box spans the full .content width (margin 0); interior left padding
+  // matches body text's 32px inset so code text aligns with paragraph
+  // text — same character starts at the same x.
+  margin: 20px 0 !important;
+  padding: 18px 32px !important;
   font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
   font-size: 13px !important;
-  line-height: 1.7 !important;
+  line-height: 1.75 !important;
   overflow-x: auto;
   max-width: 100%;
   box-sizing: border-box;
@@ -378,11 +392,11 @@ a:hover {
 .content blockquote {
   background: $af-surface !important;
   border: 1px solid $af-border !important;
-  border-left: 3px solid $af-border-heavy !important;
-  border-radius: 6px !important;
+  border-left: 3px solid $af-brand !important;
+  border-radius: 8px !important;
   color: $af-text-secondary !important;
-  margin: 18px 0 !important;
-  padding: 12px 18px !important;
+  margin: 20px 0 !important;
+  padding: 14px 30px !important;
   box-sizing: border-box;
 }
 .content blockquote > p {

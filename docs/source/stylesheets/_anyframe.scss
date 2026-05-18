@@ -185,61 +185,50 @@ a:hover {
     text-shadow: none;
   }
 
-  // Category headings get a thin top divider so the eye reads them as
-  // section breaks even without an underline below the text. Whitespace
-  // alone wasn't enough — H1 + H2 stacked too close to look distinct.
+  // One typographic rhythm step = 8px. All margins below are multiples
+  // of that so the page feels regular.
+  //   H1 → 64 above / 12 below   (categories: big air above, snug to intro)
+  //   H2 → 48 above / 8  below
+  //   H3 → 24 above / 4  below
+  //   p  → 0  above / 12 below
+  // No dividers, no eyebrows. Whitespace + weight only.
   h1 {
-    font-size: 36px;
+    font-size: 32px;
     font-weight: 700;
-    letter-spacing: -0.028em;
-    line-height: 1.1;
-    margin-top: 80px;
-    margin-bottom: 28px;
-    padding-top: 36px;
-    border-top: 1px solid $af-border;
+    letter-spacing: -0.025em;
+    line-height: 1.15;
+    margin: 64px 0 12px;
   }
   h1:first-child,
-  .h1:first-child {
-    margin-top: 0;
-    padding-top: 0;
-    border-top: 0;
-  }
+  .h1:first-child { margin-top: 0; }
 
   h2 {
-    font-size: 23px;
-    font-weight: 650;
-    letter-spacing: -0.018em;
-    line-height: 1.25;
-    margin-top: 56px;
-    margin-bottom: 14px;
-    padding-top: 0;
-    border-top: 0;
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    line-height: 1.3;
+    margin: 48px 0 8px;
   }
   h3 {
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 600;
     letter-spacing: -0.005em;
     color: $af-text;
-    margin-top: 30px;
-    margin-bottom: 10px;
+    margin: 24px 0 4px;
   }
   h4, h5, h6 {
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 600;
-    color: $af-text-muted;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    font-family: "JetBrains Mono", ui-monospace, monospace;
-    margin-top: 22px;
+    color: $af-text-secondary;
+    margin: 20px 0 4px;
   }
 
-  // Body prose: bumped to 15px / 1.7 — the previous 14px / 1.6 was
-  // visibly cramped at the column width we use.
   p, li, dt, dd {
     color: $af-text-secondary;
     font-size: 15px;
-    line-height: 1.7;
+    line-height: 1.65;
   }
+  p { margin: 0 0 12px; }
   p strong, li strong { color: $af-text; }
 
   // Inline code — pill on a darker tone, no border.
@@ -298,28 +287,27 @@ a:hover {
   // Blockquote styling lives in the single-column overrides at the bottom
   // of this file (Slate's default treatment is incompatible with our layout).
 
-  // Asides — Signal Blue / Warning / Success / Danger.
+  // Asides — flat surface, thin left tick in the accent. Match
+  // blockquote weight so callouts and quotes feel like one system.
   aside {
-    border-radius: 8px;
-    border: 1px solid $af-border;
-    padding: 14px 18px;
+    border-radius: 0;
+    border: 0;
+    border-left: 2px solid $af-info;
+    padding: 4px 18px !important;
+    margin: 16px 0 !important;
     color: $af-text-secondary;
-    background: $af-surface;
+    background: transparent !important;
+    font-size: 14px;
+    line-height: 1.6;
+
+    // Hide Slate's default ::before icon (small white circle / triangle).
+    &::before { display: none !important; content: none !important; }
 
     a { color: $af-brand; }
 
-    &.notice {
-      border-left: 3px solid $af-info;
-      background: rgba(96, 165, 250, 0.06);
-    }
-    &.warning {
-      border-left: 3px solid $af-warning;
-      background: rgba(251, 191, 36, 0.06);
-    }
-    &.success {
-      border-left: 3px solid $af-success;
-      background: rgba(74, 222, 128, 0.06);
-    }
+    &.notice  { border-left-color: $af-info; }
+    &.warning { border-left-color: $af-warning; }
+    &.success { border-left-color: $af-success; }
   }
 
   // hr — barely-there divider.
@@ -379,28 +367,26 @@ a:hover {
   color: $af-text !important;
   border: 1px solid $af-border;
   border-radius: 8px;
-  // Box spans the full .content width (margin 0); interior left padding
-  // matches body text's 32px inset so code text aligns with paragraph
-  // text — same character starts at the same x.
-  margin: 20px 0 !important;
-  padding: 18px 32px !important;
+  // Code text aligned with paragraph text: 32px inset on both.
+  margin: 16px 0 !important;
+  padding: 16px 32px !important;
   font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
   font-size: 13px !important;
-  line-height: 1.75 !important;
+  line-height: 1.7 !important;
   overflow-x: auto;
   max-width: 100%;
   box-sizing: border-box;
 }
 
-// Blockquotes — prose callouts (used as "tip" boxes), not right-rail hints.
+// Blockquote — flat surface, subtle left tick. No brand colour shouting.
 .content blockquote {
   background: $af-surface !important;
-  border: 1px solid $af-border !important;
-  border-left: 3px solid $af-brand !important;
-  border-radius: 8px !important;
+  border: 0 !important;
+  border-left: 2px solid $af-border-heavy !important;
+  border-radius: 0 !important;
   color: $af-text-secondary !important;
-  margin: 20px 0 !important;
-  padding: 14px 30px !important;
+  margin: 16px 0 !important;
+  padding: 4px 30px !important;
   box-sizing: border-box;
 }
 .content blockquote > p {
@@ -457,7 +443,7 @@ a:hover {
 // same mental picture of what anyframe runs.
 .anyframe-fleet {
   width: 100%;
-  margin: 8px 0 28px;
+  margin: 0 0 24px;
   background: $af-surface;
   border: 1px solid $af-border-heavy;
   border-radius: 12px;
@@ -619,56 +605,50 @@ a:hover {
   to   { transform: scale(1); opacity: 1; }
 }
 
-// Tagline that sits above the fleet visual on the welcome page.
+// Tagline that sits above the fleet visual on the welcome page —
+// larger than body prose, so the reader catches what AnyFrame is
+// before they look at the animation below.
 .anyframe-tagline {
-  color: $af-text-secondary;
-  font-size: 15px;
+  color: $af-text;
+  font-size: 17px;
   line-height: 1.55;
-  margin: 0 0 20px;
+  margin: 0 0 16px !important;
+
+  strong { font-weight: 600; }
 }
 
-// "Where to next" tiles on the welcome page — three small cards that
-// route the reader into Quickstart / Concepts / Reference. Same
-// visual language as uv-docs' homepage signposts.
+// Three signpost tiles on the welcome page.
 .next-cards {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  margin: 24px 0 28px;
+  gap: 8px;
+  margin: 16px 0 24px;
 }
 .next-card {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 16px 18px;
+  gap: 4px;
+  padding: 14px 16px;
   background: $af-surface;
   border: 1px solid $af-border;
-  border-radius: 10px;
+  border-radius: 8px;
   text-decoration: none !important;
   border-bottom: 1px solid $af-border !important;
-  transition: border-color 140ms ease, background 140ms ease, transform 140ms ease;
+  transition: border-color 120ms ease, background 120ms ease;
 
   &:hover {
     border-color: $af-brand;
     background: $af-brand-subtle;
-    transform: translateY(-1px);
   }
 
-  .next-card-eyebrow {
-    font-family: "JetBrains Mono", ui-monospace, monospace;
-    font-size: 10px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: $af-text-muted;
-  }
   .next-card-title {
     color: $af-text;
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 600;
     letter-spacing: -0.01em;
   }
   .next-card-desc {
-    color: $af-text-secondary;
+    color: $af-text-muted;
     font-size: 13px;
     line-height: 1.5;
 

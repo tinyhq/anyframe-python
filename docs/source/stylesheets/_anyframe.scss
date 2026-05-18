@@ -679,11 +679,22 @@ a:hover {
   span { color: $af-text; }
 }
 
-// Copy-code button (Slate adds .copy-clipboard).
+// Copy-code button (Slate adds .copy-clipboard, floated right by
+// default). Anchor it absolutely so it sits in the same corner of
+// every code block regardless of how many lines the snippet has.
+.content pre.highlight { position: relative; }
 .copy-clipboard {
+  position: absolute !important;
+  top: 10px;
+  right: 12px;
+  float: none !important;
+  width: 16px !important;
+  height: 16px !important;
   filter: invert(0.7);
-  opacity: 0.6;
-  &:hover { opacity: 1; }
+  opacity: 0.45;
+  transition: opacity 120ms ease;
+
+  &:hover { opacity: 0.9; }
 }
 
 // Subtle scrollbars (WebKit only).

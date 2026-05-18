@@ -21,10 +21,9 @@ meta:
 
 ```shell
 uv add anyframe
-# or: pip install anyframe
 ```
 
-A thin, typed wrapper over the AnyFrame REST API. Same surface, same semantics, no extras. Targets Python 3.10+; ships fully typed (`py.typed`). Every sync method has an async counterpart on `AsyncAnyFrame` with the same signature.
+Or `pip install anyframe`. A thin, typed wrapper over the AnyFrame REST API — same surface, same semantics, no extras. Python 3.10+, fully typed (`py.typed`), every sync method has an async counterpart on `AsyncAnyFrame`.
 
 <div class="next-cards">
   <a class="next-card" href="#quickstart">

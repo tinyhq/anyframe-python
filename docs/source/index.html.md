@@ -28,19 +28,16 @@ A thin, typed wrapper over the AnyFrame REST API. Same surface, same semantics, 
 
 <div class="next-cards">
   <a class="next-card" href="#quickstart">
-    <span class="next-card-eyebrow">Get going</span>
     <span class="next-card-title">Quickstart →</span>
-    <span class="next-card-desc">Three working recipes from <code>import</code> to a live sandbox.</span>
+    <span class="next-card-desc">Three recipes from <code>import</code> to a live sandbox.</span>
   </a>
   <a class="next-card" href="#concepts">
-    <span class="next-card-eyebrow">Learn the shape</span>
     <span class="next-card-title">Concepts →</span>
-    <span class="next-card-desc">Agent, build, session, snapshot — and how they nest.</span>
+    <span class="next-card-desc">Agents, builds, sessions, snapshots.</span>
   </a>
   <a class="next-card" href="#reference">
-    <span class="next-card-eyebrow">Look it up</span>
     <span class="next-card-title">Reference →</span>
-    <span class="next-card-desc">Every resource manager, every method, with types.</span>
+    <span class="next-card-desc">Every resource, every method.</span>
   </a>
 </div>
 
@@ -49,8 +46,6 @@ This is the <strong>Python</strong> SDK reference. For Node, REST, and CLI, see 
 </aside>
 
 # Quickstart
-
-Three recipes, ordered by what most people do first: jump into a session that's already running in the dashboard, stand up a chat widget on your site, or build a brand-new agent from a repo.
 
 ## Take over a web session
 
@@ -75,12 +70,7 @@ export ANYFRAME_API_KEY=afm_...
 python takeover.py
 ```
 
-Already have an agent and session running in the web UI? Skip building and just talk to it.
-
-1. **Construct the client.** Reads `ANYFRAME_API_KEY` from the environment (or a `.env` file).
-2. **Find the session.** Use `af.sessions.list()`, or paste the session id straight from the web URL.
-3. **Send a turn.** `af.sessions.message()` posts to the same chat channel the web UI uses - both clients stay in sync.
-4. **Stream the reply.** `af.sessions.events()` is a live SSE iterator. Loop until you've seen enough; the session keeps running on the server after you disconnect.
+Already have an agent and session running in the web UI? Skip building and just talk to it. Both clients hit the same chat channel, so they stay in sync.
 
 <aside class="notice">
 If the session shows status <code>terminated</code> or <code>paused</code>, call <code>af.sessions.resume(session.id)</code> first, then <code>wait_until_running</code>.
@@ -109,15 +99,10 @@ async def on_visitor_message(session_id: int, text: str):
 git clone https://github.com/tinyhq/anyframe-web-chat
 ```
 
-A common use of the SDK: stand up a per-visitor chat widget on your own site, backed by your agent.
-
-1. **Use the async client.** Chat is fan-out heavy; `AsyncAnyFrame` lets one process serve many concurrent visitors via `asyncio.gather` / FastAPI.
-2. **One session per visitor.** Boot once with `af.sessions.create(agent_id=...)`, store the `session_id` against a signed visitor cookie, reuse it on every reload.
-3. **`message` to send, `events` to receive.** Posts to the in-sandbox chat bridge; the SSE stream replays history (pass `last_event_id`) and tails new turns.
-4. **Keep the API key server-side.** The browser only ever sees your origin; only your server holds the `afm_` token.
+One async client, one session per visitor, SSE back to the browser. Keep the `afm_` token on your server; the browser only talks to your origin.
 
 <aside class="notice">
-There's a ready-to-deploy reference implementation at <a href="https://github.com/tinyhq/anyframe-web-chat"><code>tinyhq/anyframe-web-chat</code></a>: drop-in <code>&lt;script&gt;</code> tag for your site, signed visitor cookies, per-visitor + per-IP rate limits, SQLite session map. Fork it, fill in <code>ANYFRAME_API_KEY</code> and <code>ANYFRAME_AGENT_ID</code>, deploy.
+Ready-to-deploy reference at <a href="https://github.com/tinyhq/anyframe-web-chat"><code>tinyhq/anyframe-web-chat</code></a> — drop-in <code>&lt;script&gt;</code> tag, signed visitor cookies, rate limits, SQLite session map. Fork, set <code>ANYFRAME_API_KEY</code> + <code>ANYFRAME_AGENT_ID</code>, deploy.
 </aside>
 
 ## Build a fresh agent from scratch
@@ -145,19 +130,9 @@ export ANYFRAME_API_KEY=afm_...
 python quickstart.py
 ```
 
-Five steps from `import` to a running sandbox.
-
-1. **Construct the client.** The constructor reads `ANYFRAME_API_KEY` from the environment (or a `.env` file in the working directory).
-2. **Create an agent.** Bind a GitHub repo and an `install_cmd`. Skills and MCPs can be attached later.
-3. **Build.** Trigger an image build; `wait_for_build` polls until done. Cached builds return immediately.
-4. **Create a session.** Boots a sandbox from the latest image. Returns immediately in the `booting` state.
-5. **Wait until running.** Block until the sandbox reports `running`. Then `session.sandbox_url` is the URL you talk to.
-
-> The five-step flow is intentional. You can call any step out of order - `build()` without `create()` errors clearly; `wait_until_running` on a never-created id returns 404 via `NotFoundError`.
+Create → build → session → wait. Builds are cached by `(repo, ref, install_cmd)`, so a re-run of the same agent skips straight past `wait_for_build`.
 
 # Setup
-
-Installation, API key, and authentication — the three things that have to be true before any other SDK call works.
 
 ## Install
 
@@ -170,9 +145,7 @@ uv add anyframe
 pip install anyframe
 ```
 
-`anyframe` is published on PyPI. The package targets Python 3.10+ and depends on `httpx`, `pydantic`, and `python-dotenv`.
-
-The SDK ships with PEP 561 typing markers (`py.typed`), so `mypy` and `pyright` resolve types out of the box.
+Python 3.10+. Ships fully typed (`py.typed`) so `mypy` and `pyright` resolve out of the box.
 
 | Requirement | Version |
 | --- | --- |
@@ -197,17 +170,10 @@ created = af.tokens.create(name="ci-bot")
 print(created.token)   # afm_...  one-time
 ```
 
-The SDK authenticates with a personal API token (prefix `afm_`). You need one before any other call works.
-
-1. Sign in at [anyfrm.com](https://anyfrm.com).
-2. Open **Dashboard → Settings → API keys** and click **Create key**.
-3. Copy the `afm_...` token. The dashboard only shows it once - store it now.
-4. Drop it into a `.env` file next to your script, or export it as `ANYFRAME_API_KEY`.
-
-Already authed in another script? `af.tokens.create(name=...)` returns a fresh token (see [Tokens](#tokens)).
+Tokens prefix `afm_` and the dashboard shows the plaintext once. Drop it into `.env` next to your script, or export `ANYFRAME_API_KEY`.
 
 <aside class="notice">
-<strong>Working with private repos?</strong> The control plane also needs a GitHub PAT. Set it once in the dashboard's Credentials page, or call <code>af.credentials.set_github("ghp_...")</code>. See <a href="#credentials">Credentials</a>.
+<strong>Private repos?</strong> Set a GitHub PAT once: dashboard <strong>Credentials</strong> tab, or <code>af.credentials.set_github("ghp_...")</code>. See <a href="#credentials">Credentials</a>.
 </aside>
 
 ## Authentication
@@ -229,18 +195,10 @@ ANYFRAME_BASE_URL=https://api.anyfrm.com   # optional
 ANYFRAME_LOG_LEVEL=INFO                    # set DEBUG for request tracing
 ```
 
-The SDK authenticates with a personal API token (prefix `afm_`). See [Get an API key](#get-an-api-key) for where the token comes from.
-
-Resolution order:
-
-1. `api_key=` kwarg passed to the constructor
-2. `ANYFRAME_API_KEY` env var
-3. `ANYFRAME_API_KEY` in a `.env` file in the current working directory
-
-If none of these resolve, the constructor raises `AuthError`.
+Resolution order: `api_key=` kwarg → `ANYFRAME_API_KEY` env var → `ANYFRAME_API_KEY` in `.env`. None resolved → `AuthError`.
 
 <aside class="notice">
-<strong>Base URL.</strong> Defaults to <code>https://api.anyfrm.com</code>. Override with the <code>base_url=</code> kwarg or <code>ANYFRAME_BASE_URL</code> for self-hosted deployments.
+<strong>Base URL.</strong> Defaults to <code>https://api.anyfrm.com</code>. Override with <code>base_url=</code> or <code>ANYFRAME_BASE_URL</code> for self-hosted.
 </aside>
 
 ### Environment variables
@@ -258,13 +216,11 @@ If none of these resolve, the constructor raises `AuthError`.
 af = anyframe.AnyFrame(api_key=settings.key, load_dotenv=False)
 ```
 
-By default the SDK auto-loads a `.env` file from the current working directory (`load_dotenv=True`). Shell env wins; `.env` fills the gaps - matching the behaviour of the AnyFrame control-plane server.
-
-Pass `load_dotenv=False` when embedding the SDK inside a library that shouldn't reach into the host environment.
+Auto-loads `.env` from cwd. Shell env wins; `.env` fills gaps. Pass `load_dotenv=False` when embedding the SDK in a library.
 
 # Concepts
 
-[AnyFrame](https://anyfrm.com) builds an image from your agent's repo and boots a sandbox running Claude Code inside. Your tools — Linear, Sentry, your dev server, your editor — connect to the sandbox over MCP, SSE, and HTTP. This SDK is the Python entry point to that control plane: everything visible in the dashboard is callable here.
+[AnyFrame](https://anyfrm.com) builds an image from your agent's repo and boots a sandbox running Claude Code inside. The SDK is the Python entry point — everything in the dashboard is callable here.
 
 <pre class="diagram">
             ┌──────────────────────────────────────────┐
@@ -276,8 +232,6 @@ Pass `load_dotenv=False` when embedding the SDK inside a library that shouldn't 
             │  Session (sandbox · chat · serve)        │
             └──────────────────────────────────────────┘
 </pre>
-
-Two foundations before the reference: the *mental model* (the objects you'll touch and how they nest) and the *client* (how you instantiate the SDK and what's hanging off it).
 
 ## Mental model
 
@@ -315,24 +269,6 @@ Before reading the reference, six concepts:
 
 **Skill / MCP.** Per-agent capabilities. Skills are Claude Code skills (markdown + a frontmatter contract). MCPs are agent-scoped MCP servers that don't make sense to share across agents.
 
-<pre class="diagram">
-        ┌────────────── User scope ──────────────┐
-        │   Connectors        Credentials         │
-        │   (Linear, Sentry,  (Claude OAuth,      │
-        │    Slack, …)         GitHub PAT)        │
-        └────┬──────────────────────┬─────────────┘
-             │  toggled per agent   │  consumed by every sandbox
-             ▼                      ▼
-        ┌────────────── Agent scope ──────────────┐
-        │   Skills · MCPs · Repo · System Prompt  │
-        └────┬────────────────────────────────────┘
-             │  built into an image
-             ▼
-        ┌────────────── Session scope ────────────┐
-        │   Sandbox · Chat · Serve · Snapshots    │
-        └─────────────────────────────────────────┘
-</pre>
-
 ## The client
 
 ```python
@@ -369,7 +305,7 @@ af.sessions       # Live sandboxes (chat, previews, snapshots, save-as-base)
 af.attention      # Items needing the operator (pending / idle / paused)
 ```
 
-`AnyFrame` and `AsyncAnyFrame` are the entry points. Both share the same constructor signature and the same resource attributes, so you can write code once and swap clients.
+`AnyFrame` and `AsyncAnyFrame` share the same constructor signature and the same resource attributes — write code once, swap clients.
 
 ### Constructor parameters
 
@@ -410,8 +346,6 @@ The client holds an internal `httpx` connection pool. Always close it - either w
 For the async client, the equivalent is `await af.aclose()` / `async with AsyncAnyFrame() as af`.
 
 # Reference
-
-The full surface, in dependency order: agents → builds → sessions, with connectors / credentials / tokens managing the cross-cutting state, and streaming + async covering the two protocols you'll wrap them in.
 
 ## Agents
 
@@ -808,8 +742,6 @@ Use it when:
 
 # Configuration
 
-Every env var, constructor kwarg, and default the SDK reads — in one place.
-
 ## Settings
 
 | Env var | Constructor kwarg | Default | Purpose |
@@ -830,8 +762,6 @@ logging.getLogger("anyframe").setLevel(logging.DEBUG)
 The SDK logs under the `anyframe` logger. Set `ANYFRAME_LOG_LEVEL=DEBUG` for one-line traces of every request (method, path, status, elapsed ms).
 
 # Errors & support
-
-The exception tree the SDK raises, plus where to ask when something goes sideways.
 
 ## Errors
 

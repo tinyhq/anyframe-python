@@ -20,6 +20,16 @@ The official Python SDK for the [AnyFrame](https://anyfrm.com) control plane - p
 
 User-level **Connectors** plug MCP servers (Linear, Sentry, …) in once and toggle them per-agent. **Skills** + **MCPs** ride with the agent into every session it boots.
 
+
+## Demo
+
+
+
+https://github.com/user-attachments/assets/93e8edb6-2a19-4182-9492-fd397a33921c
+
+
+
+
 ## Install
 
 ```bash

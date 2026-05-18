@@ -695,6 +695,38 @@ a:hover {
   transition: opacity 120ms ease;
 
   &:hover { opacity: 0.9; }
+
+  // "Copied" feedback — pill that sits just left of the icon for 1.4s
+  // after a click. The JS toggles .is-copied; pure CSS handles visuals.
+  &::after {
+    content: "Copied";
+    position: absolute;
+    top: 50%;
+    right: calc(100% + 6px);
+    transform: translateY(-50%);
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: $af-brand;
+    color: $af-bg;
+    font-family: "Inter", -apple-system, sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    line-height: 1;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 140ms ease;
+    // Counteract our parent's invert(0.7) so the pill renders in the
+    // original brand colour, not its inverse.
+    filter: invert(1) hue-rotate(180deg);
+  }
+
+  &.is-copied {
+    opacity: 1;
+
+    &::after { opacity: 1; }
+  }
 }
 
 // Subtle scrollbars (WebKit only).

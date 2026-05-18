@@ -23,7 +23,7 @@ meta:
 uv add anyframe
 ```
 
-Or `pip install anyframe`. A thin, typed wrapper over the AnyFrame REST API — same surface, same semantics, no extras. Python 3.10+, fully typed (`py.typed`), every sync method has an async counterpart on `AsyncAnyFrame`.
+A thin, typed wrapper over the AnyFrame REST API — same surface, same semantics, no extras. Python 3.10+, fully typed (`py.typed`), every sync method has an async counterpart on `AsyncAnyFrame`.
 
 <div class="next-cards">
   <a class="next-card" href="#quickstart">

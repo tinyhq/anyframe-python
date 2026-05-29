@@ -111,11 +111,16 @@ import anyframe
 
 af = anyframe.AnyFrame()
 
-agent = af.agents.create(
-    name="demo",
+# A template is the reusable blueprint — repo, install, system prompt.
+template = af.templates.create(
+    name="box",
     repo_url="tinyhq/box",
     install_cmd="bun install",
+    system_prompt="You are a careful, terse engineer.",
 )
+
+# An agent is a thin binding to a template. Many agents can share one.
+agent = af.agents.create(name="demo", template_id=template.id)
 af.agents.build(agent.id)
 af.agents.wait_for_build(agent.id)
 
@@ -129,7 +134,7 @@ export ANYFRAME_API_KEY=afm_...
 python quickstart.py
 ```
 
-Create → build → session → wait. Builds are cached by `(repo, ref, install_cmd)`, so a re-run of the same agent skips straight past `wait_for_build`.
+Template → agent → build → session → wait. Builds are cached by `(repo, ref, install_cmd, runtime)`, so a re-run of the same agent skips straight past `wait_for_build`.
 
 # Setup
 
@@ -172,7 +177,7 @@ print(created.token)   # afm_...  one-time
 Tokens prefix `afm_` and the dashboard shows the plaintext once. Drop it into `.env` next to your script, or export `ANYFRAME_API_KEY`.
 
 <aside class="notice">
-<strong>Private repos?</strong> Set a GitHub PAT once: dashboard <strong>Credentials</strong> tab, or <code>af.credentials.set_github("ghp_...")</code>. See <a href="#credentials">Credentials</a>.
+<strong>Private repos?</strong> Install a GitHub App once from the dashboard <strong>Integrations</strong> tab, then pass its <code>install_id</code> to <code>templates.create()</code>. See <a href="#integrations">Integrations</a>.
 </aside>
 
 ## Authentication
@@ -237,36 +242,47 @@ Auto-loads `.env` from cwd. Shell env wins; `.env` fills gaps. Pass `load_dotenv
 ```python
 # The objects you'll touch, in dependency order:
 #
-#   User       ← af.me()
-#   Token      ← af.tokens
-#   Connector  ← af.connectors       (user-scoped, reusable across agents)
-#                                    + af.connectors.list_catalog() / install_catalog_*
-#   Agent      ← af.agents           (config: repo, prompt, skills, mcps, runtime, env_vars)
-#     ├─ Skill ← af.agents.skills
-#     ├─ MCP   ← af.agents.mcps
-#     └─ Toggle← af.agents.connectors (per-agent on/off for user connectors)
-#   Build      ← af.agents.build / .builds / .wait_for_build
-#   Session    ← af.sessions         (a live sandbox)
-#     ├─ Chat  ← af.sessions.message / .transcript / .events
-#     ├─ Preview ← af.sessions.previews_start / .previews_stop / .previews_list
-#     ├─ Setup ← af.sessions.create(is_setup_session=True) → .save_as_base
-#     └─ Snap  ← af.sessions.snapshots
-#   Attention  ← af.attention.list   (pending / idle / paused - needs you)
+#   User        ← af.me()             (hydrated identity + org memberships)
+#   Token       ← af.tokens
+#   Credit      ← af.credits.get()    (free-trial pool, scope-aware)
+#   Connector   ← af.connectors       (user/org-scoped MCP registrations)
+#                                     + af.connectors.list_catalog() / install_catalog_*
+#   Integration ← af.integrations     (GitHub App installs, provider apps)
+#   Template    ← af.templates        (repo, system prompt, install/serve, perms, env)
+#     ├─ Skill  ← af.templates.skills
+#     ├─ MCP    ← af.templates.mcps
+#     └─ Toggle ← af.templates.connectors  (per-template on/off for user connectors)
+#   Agent       ← af.agents           (template binding + runtime + per-agent overrides)
+#   Build       ← af.agents.build / .builds / .wait_for_build
+#   Session     ← af.sessions         (a live sandbox)
+#     ├─ Chat   ← af.sessions.message / .transcript / .events
+#     ├─ Preview← af.sessions.previews_start / .previews_stop / .previews_list
+#     ├─ Setup  ← af.sessions.create(is_setup_session=True) → .save_as_base
+#     ├─ Collab ← af.sessions.presence / .handoff / .take_over / .set_privacy
+#     └─ Snap   ← af.sessions.snapshots
+#   Attention   ← af.attention.list   (pending / idle / paused — needs you)
+#   Org         ← af.orgs             (workspaces — members, invitations, audit)
 ```
 
-Before reading the reference, six concepts:
+Before reading the reference, seven concepts:
 
-**Agent.** The config: a repo, a system prompt, an install command, plus the skills and MCPs that ride with it. Agents are reusable templates - the same agent boots many sessions.
+**Template.** The reusable blueprint: a repo, a system prompt, install / serve commands, baseline permissions, and baseline env vars — plus skills, MCPs, and connector toggles. Templates are where the *what* of an agent lives.
 
-**Build.** A container image baked from the agent's repo at a specific ref. Builds are cached by repo + ref + install command. Calling `build()` on a cached config returns immediately with `queued=False`.
+**Agent.** A thin binding to a template plus per-agent overrides — which `runtime` runs it, any `permissions_override` or `env_vars_override`. Many agents can share one template; cached build images key off the (template, runtime) pair.
 
-**Session.** A live sandbox running the agent's image. Each session has its own filesystem, its own chat thread, and its own snapshot history. Sessions start `booting`, become `running`, can be `paused` (snapshotted + idle), and eventually `terminated`.
+**Build.** A container image baked from the bound template's repo at a specific ref. Builds are cached by (repo + ref + install_cmd + runtime). Calling `build()` on a cached config returns immediately with `queued=False`.
+
+**Session.** A live sandbox running the agent's image. Each has its own filesystem, chat thread, and snapshot history. Sessions start `booting`, become `running`, can be `paused` (snapshotted + idle), and eventually `terminated`.
 
 **Snapshot.** A point-in-time capture of a session's filesystem and chat state. Sessions snapshot automatically when they go idle (see `idle_timeout_s`). You can `resume()` from any snapshot.
 
-**Connector.** A user-scoped MCP server registration - Linear, Sentry, Slack, anything that speaks MCP. Connectors are configured once at the user level and *toggled* on or off per agent.
+**Connector.** A user- or org-scoped MCP server registration — Linear, Sentry, Slack, anything that speaks MCP. Configured once, then *toggled* on or off per template.
 
-**Skill / MCP.** Per-agent capabilities. Skills are Claude Code skills (markdown + a frontmatter contract). MCPs are agent-scoped MCP servers that don't make sense to share across agents.
+**Org.** An optional shared workspace: every member sees the same templates, agents, sessions, and connectors, and shares one runtime credit pool. Switch in and out of an org with `af.set_active_org(org_id)`.
+
+<aside class="notice">
+<strong>Coming from v1?</strong> The agent config split into <strong>templates</strong> + a thin <strong>agent</strong>. Skills, MCPs, and connector toggles moved from <code>af.agents.*</code> to <code>af.templates.*</code>. See the <a href="#migrating-from-1-x">migration note</a> for the full list.
+</aside>
 
 ## The client
 
@@ -291,17 +307,24 @@ with anyframe.AnyFrame() as af:
 ```
 
 ```python
-# Identity
+# Identity + workspace
 me = af.me()
-print(me.email)
+print(me.email, me.active_org_id)
+af.set_active_org(org_id)       # switch into an org workspace
+af.set_active_org(None)         # back to personal
+af.public_config()              # server feature flags (unauthenticated)
 
 # Resources
 af.tokens         # API token management
-af.credentials    # Claude / Codex / GitHub credentials
-af.connectors     # User-scoped MCP registrations + curated catalog
-af.agents         # Agents, builds, skills, mcps
-af.sessions       # Live sandboxes (chat, previews, snapshots, save-as-base)
+af.credentials    # Claude / Codex runtime credentials (personal)
+af.credits        # Free-trial credit balance (personal or active org)
+af.connectors     # User/org MCP registrations + curated catalog
+af.templates      # Templates + nested skills, mcps, connector toggles
+af.agents         # Agents (template binding + overrides) + builds
+af.sessions       # Live sandboxes (chat, previews, snapshots, collab)
 af.attention      # Items needing the operator (pending / idle / paused)
+af.integrations   # GitHub App installs, provider apps, webhook bindings
+af.orgs           # Organisations — members, invitations, audit log
 ```
 
 `AnyFrame` and `AsyncAnyFrame` share the same constructor signature and the same resource attributes — write code once, swap clients.
@@ -319,10 +342,24 @@ af.attention      # Items needing the operator (pending / idle / paused)
 
 ```python
 me = af.me()
-# User(id=42, email='you@example.com', name='You', plan='free', …)
+# User(id=42, login='you', email='you@example.com', name='You',
+#      is_superadmin=False,
+#      memberships=[OrgMembership(org=Org(slug='acme', …), role='owner')],
+#      active_org_id=100,
+#      suggested_orgs=[],            # auto_join_domain matches
+#      pending_join_requests=[],
+#      pending_invitations=[])       # GitHub-login invites to accept inline
+
+af.set_active_org(100)                # switch into Acme's workspace
+af.set_active_org(None)               # back to personal
+
+cfg = af.public_config()              # unauthenticated server feature flags
+# PublicConfig(free_trial_enabled=True, chat_widget_enabled=False, google_enabled=True)
 ```
 
-`me()` returns the authenticated `User` record. Use it as a probe to confirm the API key works without touching the rest of the surface.
+`me()` returns the hydrated identity for the authenticated caller. When the server has organisations enabled, the response also carries every membership, the currently-active workspace, any auto-join-domain `suggested_orgs`, `pending_join_requests` you've opened, and any `pending_invitations` addressed to your GitHub login (which you can accept in place with `af.orgs.invitations.accept_for_me(id)`).
+
+`set_active_org(org_id)` flips the active workspace — every resource call afterwards (templates, agents, sessions, …) is scoped to that org. Pass `None` to switch back to personal.
 
 ### Lifecycle
 
@@ -346,106 +383,144 @@ For the async client, the equivalent is `await af.aclose()` / `async with AsyncA
 
 # Reference
 
-## Agents
+## Templates
 
 ```python
-# Create
-agent = af.agents.create(
-    name="my-agent",
-    description="Triages bugs on the box repo",
+# Create — the blueprint behind every agent
+template = af.templates.create(
+    name="box",
+    description="Bun + React preview stack",
     system_prompt="You are a careful, terse engineer.",
     repo_url="tinyhq/box",
     repo_ref="main",
     install_cmd="bun install",
     serve_cmd="bun dev",
     preview_ports=[3000],
+    install_id=42,                      # GitHub App install for the repo
+)
+
+# List / get / update / delete
+af.templates.list()
+detail = af.templates.get(template.id)  # includes skills, mcps, connector toggles, agent_count
+af.templates.update(template.id, system_prompt="Be brief.")
+af.templates.delete(template.id)        # 409 if any agent is still bound
+```
+
+Templates own the *what*: the repo binding, install/serve commands, system prompt, baseline permissions, baseline env vars, and the attached skills + MCPs + connector toggles. One template can back many agents.
+
+### Create a template
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `name` | `str` | Required. 1-255 chars. |
+| `description` | <code>str &#124; None</code> | Free-text description. |
+| `system_prompt` | <code>str &#124; None</code> | Prefix injected into the runtime's system prompt. |
+| `repo_url` | <code>str &#124; None</code> | `owner/name` GitHub repo. Omit for a general-purpose template with no repo. |
+| `repo_ref` | <code>str &#124; None</code> | Branch / tag / SHA. Server default: `main`. |
+| `install_cmd` | <code>str &#124; None</code> | Shell command run during build to install deps. |
+| `serve_cmd` | <code>str &#124; None</code> | Preview-server command (e.g. `bun dev`). |
+| `preview_ports` | <code>list[int] &#124; None</code> | Ports allowed via the previews API. |
+| `permissions` | <code>dict &#124; None</code> | Baseline permissions preset. |
+| `env_vars` | <code>dict[str, str] &#124; None</code> | Baseline env vars. Keys must match `[A-Z_][A-Z0-9_]*`. Encrypted at rest, masked in responses. |
+| `install_id` | <code>int &#124; None</code> | **Required when `repo_url` is set.** ID of the GitHub App install that grants access (see [Integrations](#integrations)). |
+
+Changing `repo_url`, `repo_ref`, or `install_cmd` invalidates the warmup snapshot on every bound agent and re-warms them in the background.
+
+### Skills, MCPs, Connector toggles
+
+```python
+# Skills — Claude Code skills (markdown with frontmatter)
+af.templates.skills.list(template.id)
+af.templates.skills.create(
+    template.id,
+    name="repo-tour",
+    source="inline",
+    content={"markdown": "..."},
+)
+af.templates.skills.update(template.id, skill.id, enabled=False)
+af.templates.skills.delete(template.id, skill.id)
+
+# MCPs — inline MCP servers defined on this template
+af.templates.mcps.list(template.id)
+af.templates.mcps.create(
+    template.id,
+    name="local-fs",
+    transport="stdio",
+    config={"command": "npx", "args": ["@modelcontextprotocol/server-filesystem", "/work"]},
+)
+
+# Connector toggles — flip user/org connectors on or off for this template
+af.templates.connectors.list(template.id)
+af.templates.connectors.set(template.id, connector_id=7, enabled=True)
+```
+
+Three nested managers, mirroring the v1 agent sub-resources but rooted on the template:
+
+- `templates.skills` — Claude Code skills, scoped to the template.
+- `templates.mcps` — inline MCP servers (use when there's no point sharing the config across templates).
+- `templates.connectors` — toggles for user/org-scoped connectors (see [Connectors](#connectors)).
+
+## Agents
+
+```python
+# Create — bind to a template, optionally override
+agent = af.agents.create(
+    name="prod-bot",
+    template_id=template.id,
+    runtime="claude",
+    permissions_override={"preset": "full_trust"},
+    env_vars_override={"DEBUG": "1"},
 )
 
 # List / get / update / delete
 af.agents.list()
-detail = af.agents.get(agent.id)         # includes skills, mcps, connector toggles
-af.agents.update(agent.id, system_prompt="Be brief.")
-af.agents.delete(agent.id)               # cascades to sessions + builds
+detail = af.agents.get(agent.id)        # embeds the bound template + image
+af.agents.update(agent.id, runtime="codex")
+af.agents.update(agent.id, permissions_override=None)  # clear → fall back to template
+af.agents.delete(agent.id)              # cascades to sessions + builds
 ```
 
-Agents are the reusable config layer. The fields you set here are baked into every session this agent boots.
+An agent is a thin binding to a [template](#templates) plus per-agent overrides. The `permissions` and `env_vars` fields on the response show the *effective* values; `permissions_override` and `env_vars_override` show what's set directly on the agent so callers can tell inherited from overridden apart.
 
 ### Create an agent
 
-```python
-agent = af.agents.create(
-    name="demo",
-    repo_url="tinyhq/box",
-    install_cmd="bun install",
-)
-```
-
 | Field | Type | Description |
 | --- | --- | --- |
-| `name` | `str` | Required. Human-readable label. |
+| `name` | `str` | Required. 1-255 chars. |
+| `template_id` | `int` | **Required.** The template to bind to. |
 | `description` | <code>str &#124; None</code> | Free-text description. |
-| `system_prompt` | <code>str &#124; None</code> | Prefix injected into the runtime's system prompt. |
-| `runtime` | <code>"claude" &#124; "codex" &#124; None</code> | Which coding-agent runtime drives the sandbox. Server default: `"claude"`. |
-| `repo_url` | <code>str &#124; None</code> | `owner/name` GitHub repo. Omit for a general-purpose agent. |
-| `repo_ref` | <code>str &#124; None</code> | Branch / tag / SHA. Server default: `main`. |
-| `install_cmd` | <code>str &#124; None</code> | Shell command run during build to install deps. |
-| `serve_cmd` | <code>str &#124; None</code> | Preview-server command (e.g. `bun dev`). |
-| `preview_ports` | <code>list[int] &#124; None</code> | Ports the SDK is allowed to tunnel via the previews API. |
-| `permissions` | <code>dict &#124; None</code> | Permissions preset (see dashboard). |
-| `env_vars` | <code>dict[str, str] &#124; None</code> | Env vars injected into every session. Keys must match `[A-Z_][A-Z0-9_]*`. Values encrypted at rest, masked in responses. |
+| `runtime` | <code>"claude" &#124; "codex" &#124; None</code> | Coding-agent runtime. Server default: `"claude"`. |
+| `permissions_override` | <code>dict &#124; None</code> | If set, replaces the template's `permissions` for this agent. Pass `None` (the default) to inherit. |
+| `env_vars_override` | <code>dict[str, str] &#124; None</code> | Per-agent env-var overlay merged onto the template's vars. Same key constraints, same masking. |
+
+### Update an agent
+
+`update(agent_id, **fields)` forwards only the fields you pass. The override fields are *nullable* — pass `None` to clear, omit to leave alone:
+
+```python
+af.agents.update(agent.id, permissions_override=None)   # clear → inherit template
+af.agents.update(agent.id, env_vars_override={})         # clear → no overlay
+af.agents.update(agent.id, env_vars_override={"DEBUG": "1"})  # merge into existing
+```
 
 ### Build
 
 ```python
 queued = af.agents.build(agent.id)
-# BuildQueued(queued=True, build_id=128) - or queued=False with a reason
-# if a cached image already exists for this repo + ref + install_cmd.
+# BuildQueued(queued=True, build_id=128) — or queued=False with a reason
+# if a cached image already exists for this (template recipe + runtime).
 
 status = af.agents.wait_for_build(agent.id, timeout=600.0)
-# BuildStatus(state='succeeded', image_tag='afm:agent-42-abc123', …)
+# BuildStatus(state='succeeded', built_image_id='im_abc123', …)
 
 # Streaming the live log
 for event in af.agents.stream_build(agent.id, queued.build_id):
     print(event.event, event.json())
 ```
 
-Builds are cached by `(repo_url, repo_ref, install_cmd)`. Pass `force=True` to rebuild from scratch.
+Builds are cached by the combination of the bound template's `(repo_url, repo_ref, install_cmd)` and the agent's `runtime`. Pass `force=True` to rebuild from scratch.
 
 `wait_for_build` polls `build_status` until the build reaches a terminal state. It raises `AnyFrameError` on `failed` and `TimeoutError` if the deadline is exceeded.
-
-### Skills, MCPs, Connectors
-
-```python
-# Skills - Claude Code skills (markdown with frontmatter)
-af.agents.skills.list(agent.id)
-af.agents.skills.create(
-    agent.id,
-    name="repo-tour",
-    source="inline",
-    content={"markdown": "..."},
-)
-af.agents.skills.update(agent.id, skill.id, enabled=False)
-af.agents.skills.delete(agent.id, skill.id)
-
-# MCPs - agent-scoped MCP servers
-af.agents.mcps.list(agent.id)
-af.agents.mcps.create(
-    agent.id,
-    name="local-fs",
-    transport="stdio",
-    config={"command": "npx", "args": ["@modelcontextprotocol/server-filesystem", "/work"]},
-)
-
-# Connector toggles - flip user-level connectors on or off for this agent
-af.agents.connectors.list(agent.id)
-af.agents.connectors.set(agent.id, connector_id=7, enabled=True)
-```
-
-Each agent ships with three nested resource managers:
-
-- `agent.skills` - Claude Code skills, agent-scoped.
-- `agent.mcps` - MCP servers, agent-scoped (use when sharing isn't useful).
-- `agent.connectors` - toggles for user-scoped connectors (see [Connectors](#connectors)).
 
 ## Sessions
 
@@ -579,6 +654,39 @@ af.sessions.resume(latest_snapshot_session_id)
 
 Snapshots happen automatically on idle. Each captures the filesystem and chat state. Resume from any snapshot to fork a session.
 
+### Collaboration (org sessions)
+
+```python
+# Who's currently watching this session?
+for p in af.sessions.presence(session.id):
+    print(p.login, "driver" if p.is_driver else "watcher")
+
+# A watcher asks the driver to hand off.
+req = af.sessions.request_control(session.id, message="taking over deploy")
+# ControlRequest(id=42, status='pending')
+
+# Driver (or an admin) hands the seat to another member.
+af.sessions.handoff(session.id, to_user_id=5, request_id=req.id)
+# HandoffResult(driver_user_id=5)
+
+# Admin / owner takes the seat without the current driver's consent.
+af.sessions.take_over(session.id)
+
+# Toggle a session's visibility — private sessions disappear from other
+# members' lists and the activity feed (admins can still see them).
+af.sessions.set_privacy(session.id, private=True)
+```
+
+In an org workspace, multiple members can watch a session over the SSE stream. Only one member at a time — the *driver* — can send messages. The collab endpoints are no-ops in personal mode (the creator is always the driver).
+
+| Endpoint | Who can call it | Audit kind |
+| --- | --- | --- |
+| `presence(session_id)` | Any member with access | — |
+| `request_control(session_id, *, message=None)` | Any watcher | `session.handoff_requested` |
+| `handoff(session_id, *, to_user_id, request_id=None)` | Current driver, or admin | `session.handoff_completed` |
+| `take_over(session_id)` | Admin / owner | `session.taken_over` |
+| `set_privacy(session_id, *, private)` | Session creator (or admin) | `session.privacy_changed` |
+
 ## Connectors
 
 ```python
@@ -603,10 +711,37 @@ af.connectors.reauthorize(connector.id)  # fresh OAuth URL when a token expires
 af.connectors.delete(connector.id)
 ```
 
-Connectors are user-scoped MCP registrations. Configure them once, then flip them on per-agent with `af.agents.connectors.set(...)`. Two auth schemes are supported:
+Connectors are user- or org-scoped MCP registrations. Configure them once, then flip them on per-template with `af.templates.connectors.set(...)` — every agent bound to the template inherits the resolved set. Four auth schemes are supported:
 
-- **OAuth 2.0** - `create_oauth` returns an authorization URL; the user finishes the flow in a browser.
-- **Bearer** - `create_bearer` accepts a token directly. Use for tokens you've already minted out-of-band.
+- **OAuth 2.0** (`create_oauth`) — returns an authorization URL; the user finishes the flow in a browser.
+- **Bearer** (`create_bearer`) — accepts an `Authorization: Bearer …` token directly.
+- **Custom header** (`create_custom_header`) — for servers that expect a non-standard header (e.g. `X-API-Key`).
+- **Stdio** (`create_stdio`) — spawns a local `command args…` inside each sandbox and speaks MCP over its stdio.
+
+```python
+# Bearer — pre-issued tokens
+af.connectors.create_bearer(
+    mcp_url="https://mcp.example.com",
+    display_name="Example",
+    token="bearer-secret",
+)
+
+# Custom header — servers that don't speak Bearer
+af.connectors.create_custom_header(
+    mcp_url="https://api.example.com/mcp",
+    display_name="Example",
+    header_name="X-API-Key",
+    token="sk_live_…",
+)
+
+# Stdio — spawn a local MCP server inside the sandbox
+af.connectors.create_stdio(
+    display_name="local-fs",
+    command="npx",
+    args=["@modelcontextprotocol/server-filesystem", "/work"],
+    env={"NODE_ENV": "production"},
+)
+```
 
 ### Catalog
 
@@ -644,25 +779,37 @@ for item in af.attention.list(limit=20):
 ```python
 view = af.credentials.get()
 # Credentials(claude=CredentialPart(set=True, last4='abcd'),
-#             codex=CredentialPart(set=False, last4=None),
-#             github=CredentialPart(set=False, last4=None))
+#             codex=CredentialPart(set=False, last4=None))
 
 af.credentials.set_claude("sk-...")        # Claude OAuth token (Claude runtime)
 af.credentials.set_codex("sk-...")         # OpenAI Codex token (Codex runtime)
-af.credentials.set_github("ghp_...")       # GitHub PAT (optional, for private repos)
 
 af.credentials.clear_claude()
 af.credentials.clear_codex()
-af.credentials.clear_github()
 ```
 
-The control plane stores up to three credentials per user:
+The control plane stores two personal runtime credentials:
 
-- **Claude OAuth token** - required for agents on the Claude runtime.
-- **Codex token** - required for agents on the Codex (OpenAI) runtime.
-- **GitHub PAT** - optional, only needed to clone private repos.
+- **Claude OAuth token** — required for agents on the Claude runtime.
+- **Codex token** — required for agents on the Codex (OpenAI) runtime.
 
-The SDK only ever surfaces redacted views (`set=True` + `last4=...`). Plaintext leaves your machine once, when you call `set_*`. Older control planes that pre-date the Codex runtime omit the `codex` key from the response; the SDK parses those responses with `codex.set=False`.
+The SDK only ever surfaces redacted views (`set=True` + `last4=…`). Plaintext leaves your machine once, when you call `set_*`.
+
+<aside class="notice">
+<strong>Coming from v1?</strong> GitHub access is no longer a credential. Install a GitHub App via <a href="#integrations">Integrations</a> and pass its <code>install_id</code> to <code>templates.create()</code> instead.
+</aside>
+
+When you're in an org workspace, runtime credentials are managed at the org level — see [Orgs › Credentials](#org-credentials). Org credentials, when set, win over personal ones for every member.
+
+## Credits
+
+```python
+bal = af.credits.get()
+# CreditBalance(limit=1000, used=250, remaining=750, exhausted=False,
+#               scope='personal', org_token_active=False, checked_at=…)
+```
+
+The free-trial credit pool. `scope` reflects whether you're looking at the personal pool or the active org's shared pool — switch contexts with `af.set_active_org(...)`. When the active org has its own runtime token set, `org_token_active=True` and sessions don't draw from the credit pool at all.
 
 ## Tokens
 
@@ -681,6 +828,123 @@ API tokens are how the SDK authenticates. `create()` is the one moment the raw t
 <aside class="warning">
 <strong>Store the token immediately.</strong> The plaintext is returned exactly once. There is no recovery path - revoke and re-mint if you lose it.
 </aside>
+
+## Integrations
+
+```python
+# Every install in the current scope (personal or org)
+af.integrations.list()
+
+# GitHub-side picker — populate the template-create form
+installs = af.integrations.list_github_installs()
+repos = af.integrations.list_github_repos(installs[0].id)
+
+# Bind an install's webhook events to one agent
+af.integrations.set_binding(installs[0].id, agent_id=42)
+af.integrations.delete_binding(installs[0].id)
+af.integrations.delete(installs[0].id)        # revoke the install entirely
+
+# Advanced — provider apps (the AnyFrame side of the OAuth/App config)
+af.integrations.list_provider_apps()
+```
+
+An **integration install** is one OAuth/App install of a third-party service — a GitHub App on an org, a Slack workspace bot, a Discord app. The control plane uses installs to mint short-lived tokens at sandbox boot time and route incoming webhook events to a bound agent.
+
+The most common path: install a GitHub App via the dashboard, then pass its `install_id` to `templates.create()` to bind a repo. The OAuth dance itself runs in a browser; this resource is the read / delete / binding surface around it.
+
+| Method | Scope | Use case |
+| --- | --- | --- |
+| `list()` | personal / org | Every install in scope. |
+| `list_github_installs()` | personal / org | Slim picker shape for template-create. |
+| `list_github_repos(install_id)` | personal / org | Server-side GitHub repo listing for the picker. |
+| `set_binding(install_id, *, agent_id)` | personal / org | Route this install's webhooks to one agent (1:1, "steal" semantics). |
+| `delete_binding(install_id)` | personal / org | Unbind — install stays connected but events are dropped. |
+| `delete(install_id)` | personal / org | Revoke the install entirely. |
+| `list_provider_apps()` | personal / org | The AnyFrame side of the OAuth/App config (advanced). |
+
+## Orgs
+
+```python
+# Where am I a member?
+for m in af.orgs.list():
+    print(m.org.slug, m.role)
+
+# Create / get / update / delete (slug = URL handle)
+af.orgs.check_slug("acme-2")              # SlugAvailability(available=True, reason='ok')
+org = af.orgs.create(slug="acme", name="Acme", auto_join_domain="acme.com")
+af.orgs.get("acme")
+af.orgs.update("acme", name="Acme Corp")
+af.orgs.transfer_ownership("acme", new_owner_user_id=42)
+af.orgs.delete("acme")                     # archive (owner only)
+
+# Switch into an org workspace for subsequent calls
+af.set_active_org(org.id)
+af.set_active_org(None)                    # back to personal
+```
+
+An organisation is a shared workspace: every member sees the same templates, agents, sessions, and connectors, and shares one runtime credit pool. The whole surface is gated server-side behind an `ORGS_ENABLED` flag — every endpoint returns 404 when the flag is off.
+
+### Members and join requests
+
+```python
+af.orgs.members.list("acme")
+af.orgs.members.change_role("acme", user_id, role="admin")
+af.orgs.members.remove("acme", user_id)
+af.orgs.members.leave("acme")             # leave as the current user
+
+# Domain-based join requests (auto_join_domain matches the user's email)
+af.orgs.join_requests.list("acme")        # admin-only
+af.orgs.join_requests.create("acme")       # as the requesting user
+af.orgs.join_requests.approve("acme", request_id, role="member")
+af.orgs.join_requests.reject("acme", request_id)
+```
+
+### Invitations
+
+```python
+# Invite by GitHub login — shows up inline in the invitee's org switcher
+inv = af.orgs.invitations.create("acme", github_login="alice", message="join us")
+# OrgInvitationCreated(invitation=…, url='https://anyfrm.com/invites/tok_xyz')
+
+# …or by email — the URL is the one-time invite link
+inv = af.orgs.invitations.create("acme", email="alice@acme.com", role="admin")
+
+af.orgs.invitations.list("acme")          # admin-only
+af.orgs.invitations.revoke("acme", invitation_id)
+af.orgs.invitations.resend("acme", invitation_id)   # mints a fresh token
+
+# Invitee side — by plaintext token (anonymous-friendly)
+view = af.orgs.invitations.view_by_token("tok_xyz")
+af.orgs.invitations.accept_by_token("tok_xyz")
+
+# Or accept a github_login invite inline, no token needed
+me = af.me()
+for pending in me.pending_invitations or []:
+    af.orgs.invitations.accept_for_me(pending.id)
+```
+
+### <a id="org-credentials"></a>Org credentials
+
+```python
+af.orgs.credentials.get("acme")
+af.orgs.credentials.set_claude("acme", "sk-...")
+af.orgs.credentials.set_codex("acme", "sk-...")
+af.orgs.credentials.clear_claude("acme")
+af.orgs.credentials.clear_codex("acme")
+```
+
+Org credentials win over each member's personal credentials when the active workspace is this org. Admin-only; the same redacted view as personal credentials, never the plaintext.
+
+### Audit log + activity feed
+
+```python
+events = af.orgs.audit.list("acme", kind="agent.created", limit=50)
+csv_bytes = af.orgs.audit.export_csv("acme")     # full log, server-streamed
+
+summary = af.orgs.activity("acme")               # dashboard aggregates
+```
+
+Audit events span `agent.*`, `template.*`, `connector.*`, `session.handoff_completed`, `session.taken_over`, `session.privacy_changed`, and the membership lifecycle. Admin-only.
 
 ## Streaming (SSE)
 
@@ -822,3 +1086,53 @@ print(anyframe.__version__)
 Found a bug, have a question, or want to share what you're building? [Join us on Discord](https://discord.gg/UpkEW6JjpU) - the team hangs out in `#sdk`. When reporting a bug, include the SDK version (`anyframe.__version__`), the call that failed, and the response status.
 
 For dashboard / billing / account issues, head to [anyfrm.com](https://anyfrm.com).
+
+## <a id="migrating-from-1-x"></a>Migrating from 1.x
+
+```python
+# v1.x
+agent = af.agents.create(
+    name="demo",
+    repo_url="tinyhq/box",
+    install_cmd="bun install",
+    system_prompt="…",
+    permissions={"preset": "standard"},
+    env_vars={"NODE_ENV": "production"},
+)
+af.agents.skills.create(agent.id, name="…", source="inline", content={…})
+```
+
+```python
+# v2.0
+template = af.templates.create(
+    name="box",
+    repo_url="tinyhq/box",
+    install_cmd="bun install",
+    system_prompt="…",
+    permissions={"preset": "standard"},
+    env_vars={"NODE_ENV": "production"},
+    install_id=42,                       # NEW — required for repo-bound templates
+)
+af.templates.skills.create(template.id, name="…", source="inline", content={…})
+agent = af.agents.create(name="demo", template_id=template.id)
+```
+
+2.0 is the first breaking release. Three structural changes:
+
+1. **Agent ↔ Template split.** Every field on a v1 agent that described *what* it does (repo, install/serve, system prompt, skills, MCPs, connector toggles, baseline permissions, baseline env vars) moved to a new [Template](#templates) resource. An agent now binds to a template plus optional `runtime`, `permissions_override`, `env_vars_override`. Pull your agent-create call apart along that seam.
+
+2. **Repo access via integrations, not credentials.** `credentials.set_github` / `clear_github` are gone, and the `Credentials` model no longer has a `github` field. Install a GitHub App through the dashboard, then pass its `install_id` to `templates.create()`. See [Integrations](#integrations).
+
+3. **Optional org workspace.** The new [Orgs](#orgs) resource lets you share templates, agents, sessions, and connectors with teammates. `af.me()` now hydrates membership data; `af.set_active_org(org_id)` swaps the active scope. Personal-only callers don't need to do anything — every personal endpoint behaves identically.
+
+| 1.x call | 2.0 call |
+| --- | --- |
+| `af.agents.create(name=…, repo_url=…, install_cmd=…, system_prompt=…)` | `tpl = af.templates.create(...); af.agents.create(name=…, template_id=tpl.id)` |
+| `af.agents.skills.*(agent.id, …)` | `af.templates.skills.*(template.id, …)` |
+| `af.agents.mcps.*(agent.id, …)` | `af.templates.mcps.*(template.id, …)` |
+| `af.agents.connectors.*(agent.id, …)` | `af.templates.connectors.*(template.id, …)` |
+| `af.credentials.set_github(token)` | install a GitHub App; pass `install_id=` to `templates.create()` |
+| `creds.github` | (removed — no GitHub credential field) |
+| `User(id, login, name, avatar_url)` | `User(id, login, email, name, avatar_url, is_superadmin, memberships, active_org_id, …)` |
+
+New surfaces in 2.0: `af.templates`, `af.credits`, `af.integrations`, `af.orgs`, `af.set_active_org(...)`, `af.public_config()`, `connectors.create_custom_header(...)`, `connectors.create_stdio(...)`, and the org-collab endpoints on `af.sessions` (`presence`, `request_control`, `handoff`, `take_over`, `set_privacy`).

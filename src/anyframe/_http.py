@@ -142,6 +142,21 @@ class SyncHTTP:
             _raise_for_status(resp)
             yield from resp.iter_lines()
 
+    def get_bytes(self, path: str, **kwargs: Any) -> bytes:
+        """Issue a GET and return the raw response body — for non-JSON endpoints
+        (CSV exports, file downloads, …). Raises typed exceptions on non-2xx."""
+        start = time.perf_counter()
+        try:
+            resp = self._client.get(path, **kwargs)
+        except httpx.ConnectError as e:
+            raise exc.APIError(0, f"connection failed: {e}") from e
+        except httpx.TimeoutException as e:
+            raise exc.APIError(0, f"request timed out: {e}") from e
+        elapsed = (time.perf_counter() - start) * 1000.0
+        _log_response("GET", path, resp.status_code, elapsed)
+        _raise_for_status(resp)
+        return resp.content
+
     def close(self) -> None:
         self._client.close()
 
@@ -184,6 +199,19 @@ class AsyncHTTP:
             _raise_for_status(resp)
             async for line in resp.aiter_lines():
                 yield line
+
+    async def get_bytes(self, path: str, **kwargs: Any) -> bytes:
+        start = time.perf_counter()
+        try:
+            resp = await self._client.get(path, **kwargs)
+        except httpx.ConnectError as e:
+            raise exc.APIError(0, f"connection failed: {e}") from e
+        except httpx.TimeoutException as e:
+            raise exc.APIError(0, f"request timed out: {e}") from e
+        elapsed = (time.perf_counter() - start) * 1000.0
+        _log_response("GET", path, resp.status_code, elapsed)
+        _raise_for_status(resp)
+        return resp.content
 
     async def aclose(self) -> None:
         await self._client.aclose()

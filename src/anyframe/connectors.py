@@ -1,25 +1,31 @@
 """User-level MCP connectors — ``/api/connectors``.
 
-A connector points one of your agents at an MCP server (Linear, Sentry, a
-custom HTTP server, …). The setup happens once at the user level here;
-each agent then opts in via :class:`anyframe.agents.AgentConnectorToggles`.
+A connector points an agent at an MCP server (Linear, Sentry, a custom HTTP
+server, …). The setup happens once at the user (or org) level here; each
+template then opts each connector on or off via
+:class:`anyframe.templates.TemplateConnectors`, and every agent bound to
+the template inherits the resolved set.
 
-Two auth flows are supported:
+Four auth flows are supported:
 
-  - **OAuth DCR**: :meth:`Connectors.discover` to probe the MCP server,
-    then :meth:`Connectors.create_oauth` to register a dynamic client and
-    get an ``authorize_url`` the user opens in a browser.
-  - **Bearer paste**: skip discovery and call :meth:`Connectors.create_bearer`
-    with a pre-issued token, for MCP servers that don't speak OAuth.
+  - **OAuth DCR / pre-registered**: :meth:`Connectors.discover` to probe
+    the MCP server, then :meth:`Connectors.create_oauth` to register a
+    dynamic client and get an ``authorize_url`` to open in a browser.
+  - **Bearer**: :meth:`Connectors.create_bearer` with a pre-issued token,
+    for servers that speak ``Authorization: Bearer …``.
+  - **Custom header**: :meth:`Connectors.create_custom_header` for servers
+    that expect a non-standard header (e.g. ``X-API-Key``).
+  - **Stdio**: :meth:`Connectors.create_stdio` to spawn a local command
+    inside the sandbox and speak MCP over its stdio.
 
-There is also a curated **catalog** of connectors the control plane ships
-with — Linear, Sentry, Google, etc. Use :meth:`Connectors.list_catalog` to
-list them and :meth:`Connectors.install_catalog_oauth` /
+A curated **catalog** of connectors ships with the control plane — Linear,
+Sentry, Google, etc. Use :meth:`Connectors.list_catalog` to list them and
+:meth:`Connectors.install_catalog_oauth` /
 :meth:`Connectors.install_catalog_bearer` to install one by slug.
 
-If a refresh hard-fails (provider revoked the app, etc.) you can rerun the
-OAuth dance with :meth:`Connectors.reauthorize` without losing the existing
-connector row or per-agent toggles.
+If a refresh hard-fails (provider revoked the app, etc.) rerun the OAuth
+dance with :meth:`Connectors.reauthorize` — the connector row, its display
+name, and every per-template toggle are preserved.
 """
 
 from __future__ import annotations
@@ -117,6 +123,72 @@ class Connectors:
         )
         return Connector.model_validate(data)
 
+    def create_custom_header(
+        self,
+        *,
+        mcp_url: str,
+        display_name: str,
+        header_name: str,
+        token: str,
+        default_enabled: bool = True,
+    ) -> Connector:
+        """Create a connector that authenticates with a custom header.
+
+        Args:
+            mcp_url: The MCP server URL.
+            display_name: Label shown in the dashboard.
+            header_name: The header to inject (e.g. ``"X-API-Key"``).
+            token: The header value. Encrypted at rest, masked in responses.
+            default_enabled: Whether new templates pick this connector up
+                by default. Toggle per-template afterwards via
+                :class:`anyframe.templates.TemplateConnectors`.
+        """
+        data = self._http.request(
+            "POST",
+            "/api/connectors/custom-header",
+            json={
+                "mcp_url": mcp_url,
+                "display_name": display_name,
+                "header_name": header_name,
+                "token": token,
+                "default_enabled": default_enabled,
+            },
+        )
+        return Connector.model_validate(data)
+
+    def create_stdio(
+        self,
+        *,
+        display_name: str,
+        command: str,
+        args: list[str] | None = None,
+        env: dict[str, str] | None = None,
+        default_enabled: bool = True,
+    ) -> Connector:
+        """Create a stdio connector — spawns ``command args…`` inside the sandbox.
+
+        Args:
+            display_name: Label shown in the dashboard.
+            command: Executable path or name (must be 1–255 chars).
+            args: Command-line arguments passed to ``command``.
+            env: Environment variables exposed to the spawned process.
+                Values are encrypted at rest.
+            default_enabled: Whether new templates pick this connector up
+                by default.
+        """
+        data = self._http.request(
+            "POST",
+            "/api/connectors/stdio",
+            json={
+                "display_name": display_name,
+                "command": command,
+                "args": args or [],
+                "env": env or {},
+                "default_enabled": default_enabled,
+            },
+        )
+        return Connector.model_validate(data)
+
     def install_catalog_oauth(self, slug: str) -> ConnectorAuthorize:
         """Install a catalog connector that uses OAuth (DCR or pre-registered).
 
@@ -203,6 +275,50 @@ class AsyncConnectors:
                 "mcp_url": mcp_url,
                 "display_name": display_name,
                 "token": token,
+                "default_enabled": default_enabled,
+            },
+        )
+        return Connector.model_validate(data)
+
+    async def create_custom_header(
+        self,
+        *,
+        mcp_url: str,
+        display_name: str,
+        header_name: str,
+        token: str,
+        default_enabled: bool = True,
+    ) -> Connector:
+        data = await self._http.request(
+            "POST",
+            "/api/connectors/custom-header",
+            json={
+                "mcp_url": mcp_url,
+                "display_name": display_name,
+                "header_name": header_name,
+                "token": token,
+                "default_enabled": default_enabled,
+            },
+        )
+        return Connector.model_validate(data)
+
+    async def create_stdio(
+        self,
+        *,
+        display_name: str,
+        command: str,
+        args: list[str] | None = None,
+        env: dict[str, str] | None = None,
+        default_enabled: bool = True,
+    ) -> Connector:
+        data = await self._http.request(
+            "POST",
+            "/api/connectors/stdio",
+            json={
+                "display_name": display_name,
+                "command": command,
+                "args": args or [],
+                "env": env or {},
                 "default_enabled": default_enabled,
             },
         )

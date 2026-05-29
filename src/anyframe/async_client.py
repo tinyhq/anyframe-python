@@ -28,9 +28,13 @@ from .client import (
 )
 from .connectors import AsyncConnectors
 from .credentials import AsyncCredentials
+from .credits import AsyncCredits
 from .exceptions import AuthError
-from .models import User
+from .integrations import AsyncIntegrations
+from .models import PublicConfig, User
+from .orgs import AsyncOrgs
 from .sessions import AsyncSessions
+from .templates import AsyncTemplates
 from .tokens import AsyncTokens
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -85,17 +89,33 @@ class AsyncAnyFrame:
         # ── resources ─────────────────────────────────────────────────────
         self.tokens = AsyncTokens(self._http)
         self.credentials = AsyncCredentials(self._http)
+        self.credits = AsyncCredits(self._http)
         self.connectors = AsyncConnectors(self._http)
+        self.templates = AsyncTemplates(self._http)
         self.agents = AsyncAgents(self._http)
         self.sessions = AsyncSessions(self._http)
         self.attention = AsyncAttention(self._http)
+        self.integrations = AsyncIntegrations(self._http)
+        self.orgs = AsyncOrgs(self._http)
 
     # ── identity ──────────────────────────────────────────────────────────
 
     async def me(self) -> User:
-        """Return the authenticated user (``GET /api/me``)."""
+        """Return the hydrated identity for the authenticated caller."""
         data = await self._http.request("GET", "/api/me")
         return User.model_validate(data)
+
+    async def set_active_org(self, org_id: int | None) -> User:
+        """Switch the active workspace context (personal ↔ org)."""
+        data = await self._http.request(
+            "POST", "/api/me/active_org", json={"org_id": org_id},
+        )
+        return User.model_validate(data)
+
+    async def public_config(self) -> PublicConfig:
+        """Return the server's public feature flags (unauthenticated)."""
+        data = await self._http.request("GET", "/api/config/public")
+        return PublicConfig.model_validate(data)
 
     # ── lifecycle ─────────────────────────────────────────────────────────
 

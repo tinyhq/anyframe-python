@@ -21,10 +21,14 @@ from ._sse import SSEEvent, parse_sse, parse_sse_async
 from .exceptions import AnyFrameError
 from .models import (
     ChatEvent,
+    ControlRequest,
+    HandoffResult,
+    PresenceUser,
     Preview,
     PreviewActionResult,
     PreviewBatchResult,
     PreviewSpec,
+    PrivacyResult,
     SaveAsBaseResult,
     Session,
     Snapshot,
@@ -337,6 +341,87 @@ class Sessions:
         )
         return PreviewBatchResult.model_validate(data)
 
+    # ── collaboration (org-scoped) ────────────────────────────────────────
+
+    def presence(self, session_id: SessionId) -> builtins.list[PresenceUser]:
+        """List the users currently watching this session.
+
+        Driven by SSE-stream open/close: only members who currently have an
+        ``events`` subscription show up. The ``is_driver`` flag points out
+        who's allowed to send messages right now. Available in both personal
+        and org modes (personal sessions only ever return the caller).
+        """
+        data = self._http.request(
+            "GET", f"/api/sessions/{_sid(session_id)}/presence",
+        )
+        return [PresenceUser.model_validate(row) for row in data]
+
+    def request_control(
+        self, session_id: SessionId, *, message: str | None = None,
+    ) -> ControlRequest:
+        """Ask the current driver to hand the session off (org sessions only).
+
+        A no-op outside an org context; the server returns 400 in personal
+        mode. The driver sees the request in their attention rail and can
+        approve it via :meth:`handoff` with the returned ``id``.
+        """
+        body = _prune({"message": message})
+        data = self._http.request(
+            "POST",
+            f"/api/sessions/{_sid(session_id)}/request_control",
+            json=body or None,
+        )
+        return ControlRequest.model_validate(data)
+
+    def handoff(
+        self,
+        session_id: SessionId,
+        *,
+        to_user_id: int,
+        request_id: int | None = None,
+    ) -> HandoffResult:
+        """Hand the driver seat to another org member.
+
+        Args:
+            session_id: The session.
+            to_user_id: The target member's user id.
+            request_id: If this handoff resolves a pending
+                :meth:`request_control`, pass that request's id so the
+                server marks it approved.
+        """
+        body: dict[str, Any] = {"to_user_id": to_user_id}
+        if request_id is not None:
+            body["request_id"] = request_id
+        data = self._http.request(
+            "POST", f"/api/sessions/{_sid(session_id)}/handoff", json=body,
+        )
+        return HandoffResult.model_validate(data)
+
+    def take_over(self, session_id: SessionId) -> HandoffResult:
+        """Forcibly take the driver seat (admin / owner only).
+
+        Audited as a distinct event so a takeover is visible in the org
+        audit log even though the session behaves the same afterwards.
+        """
+        data = self._http.request(
+            "POST", f"/api/sessions/{_sid(session_id)}/take_over",
+        )
+        return HandoffResult.model_validate(data)
+
+    def set_privacy(self, session_id: SessionId, *, private: bool) -> PrivacyResult:
+        """Toggle a session's ``private`` flag (creator-only).
+
+        Private org sessions stay in the org but disappear from other
+        members' session lists and the activity feed. Admins can still
+        see them for audit purposes.
+        """
+        data = self._http.request(
+            "POST",
+            f"/api/sessions/{_sid(session_id)}/privacy",
+            json={"private": private},
+        )
+        return PrivacyResult.model_validate(data)
+
 
 class AsyncSessions:
     """Async counterpart to :class:`Sessions`."""
@@ -534,6 +619,56 @@ class AsyncSessions:
             },
         )
         return PreviewBatchResult.model_validate(data)
+
+    # ── collaboration ────────────────────────────────────────────────────
+
+    async def presence(self, session_id: SessionId) -> builtins.list[PresenceUser]:
+        data = await self._http.request(
+            "GET", f"/api/sessions/{_sid(session_id)}/presence",
+        )
+        return [PresenceUser.model_validate(row) for row in data]
+
+    async def request_control(
+        self, session_id: SessionId, *, message: str | None = None,
+    ) -> ControlRequest:
+        body = _prune({"message": message})
+        data = await self._http.request(
+            "POST",
+            f"/api/sessions/{_sid(session_id)}/request_control",
+            json=body or None,
+        )
+        return ControlRequest.model_validate(data)
+
+    async def handoff(
+        self,
+        session_id: SessionId,
+        *,
+        to_user_id: int,
+        request_id: int | None = None,
+    ) -> HandoffResult:
+        body: dict[str, Any] = {"to_user_id": to_user_id}
+        if request_id is not None:
+            body["request_id"] = request_id
+        data = await self._http.request(
+            "POST", f"/api/sessions/{_sid(session_id)}/handoff", json=body,
+        )
+        return HandoffResult.model_validate(data)
+
+    async def take_over(self, session_id: SessionId) -> HandoffResult:
+        data = await self._http.request(
+            "POST", f"/api/sessions/{_sid(session_id)}/take_over",
+        )
+        return HandoffResult.model_validate(data)
+
+    async def set_privacy(
+        self, session_id: SessionId, *, private: bool,
+    ) -> PrivacyResult:
+        data = await self._http.request(
+            "POST",
+            f"/api/sessions/{_sid(session_id)}/privacy",
+            json={"private": private},
+        )
+        return PrivacyResult.model_validate(data)
 
 
 __all__ = ["AsyncSessions", "SessionId", "Sessions"]

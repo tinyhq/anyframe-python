@@ -1,4 +1,9 @@
-"""Tests for the agents CRUD surface (excluding sub-resources)."""
+"""Tests for the v2 agents CRUD surface.
+
+Sub-resources (skills, mcps, connector toggles) moved to ``af.templates``
+in v2 — see ``test_templates.py``. Build orchestration tests live in
+``test_builds.py``.
+"""
 
 from __future__ import annotations
 
@@ -10,94 +15,97 @@ import respx
 
 import anyframe
 from tests.conftest import BASE_URL
-
-AGENT_PAYLOAD = {
-    "id": 7,
-    "name": "demo",
-    "description": None,
-    "system_prompt": None,
-    "repo_url": "tinyhq/box",
-    "repo_ref": "main",
-    "install_cmd": "bun install",
-    "serve_cmd": None,
-    "preview_ports": [3000],
-    "build_key": "abc",
-    "permissions": {"preset": "standard"},
-    "created_at": "2025-01-01T00:00:00Z",
-    "updated_at": "2025-01-01T00:00:00Z",
-}
+from tests.payloads import AGENT, AGENT_DETAIL
 
 
 @respx.mock
 def test_list_agents(client):
-    respx.get(f"{BASE_URL}/api/agents").mock(return_value=httpx.Response(200, json=[AGENT_PAYLOAD]))
+    respx.get(f"{BASE_URL}/api/agents").mock(
+        return_value=httpx.Response(200, json=[AGENT]),
+    )
     agents = client.agents.list()
     assert len(agents) == 1
     assert isinstance(agents[0], anyframe.Agent)
-    assert agents[0].id == 7
+    assert agents[0].template_id == 4
+    assert agents[0].runtime == "claude"
 
 
 @respx.mock
-def test_create_sends_only_provided_fields(client):
-    """We don't want to spam the wire with `null` for every optional field —
-    the server interprets that differently from `omit`. Only the args the
-    caller passes (plus their defaults) should land in the JSON body."""
+def test_create_requires_template_id(client):
+    """v2 agents bind to a template — name + template_id are the minimum."""
     route = respx.post(f"{BASE_URL}/api/agents").mock(
-        return_value=httpx.Response(201, json=AGENT_PAYLOAD)
+        return_value=httpx.Response(201, json=AGENT_DETAIL),
     )
-    client.agents.create(name="demo", repo_url="tinyhq/box", install_cmd="bun install")
-    sent = json.loads(route.calls.last.request.read())
-    assert sent["name"] == "demo"
-    assert sent["repo_url"] == "tinyhq/box"
-    assert sent["install_cmd"] == "bun install"
-    # Optional fields the user didn't pass must not appear in the body.
-    assert "description" not in sent
-    assert "system_prompt" not in sent
-    assert "serve_cmd" not in sent
+    agent = client.agents.create(name="demo", template_id=4)
+    assert isinstance(agent, anyframe.AgentDetail)
+    assert agent.template.id == 4
+    body = json.loads(route.calls.last.request.read())
+    # Optional fields the caller didn't pass must not appear on the wire —
+    # the server distinguishes "omit" from "explicit null" for overrides.
+    assert body == {"name": "demo", "template_id": 4}
 
 
 @respx.mock
-def test_create_accepts_permissions(client):
+def test_create_passes_overrides(client):
     route = respx.post(f"{BASE_URL}/api/agents").mock(
-        return_value=httpx.Response(201, json=AGENT_PAYLOAD)
+        return_value=httpx.Response(201, json=AGENT_DETAIL),
     )
-    client.agents.create(name="demo", permissions={"preset": "full_trust"})
-    sent = json.loads(route.calls.last.request.read())
-    assert sent["permissions"] == {"preset": "full_trust"}
+    client.agents.create(
+        name="prod-bot",
+        template_id=4,
+        runtime="codex",
+        permissions_override={"preset": "full_trust"},
+        env_vars_override={"API_KEY": "shh"},
+    )
+    body = json.loads(route.calls.last.request.read())
+    assert body["runtime"] == "codex"
+    assert body["permissions_override"] == {"preset": "full_trust"}
+    assert body["env_vars_override"] == {"API_KEY": "shh"}
 
 
 @respx.mock
-def test_get_returns_detail(client):
-    detail = AGENT_PAYLOAD | {"skills": [], "mcps": [], "connectors": [], "image": None}
-    respx.get(f"{BASE_URL}/api/agents/7").mock(return_value=httpx.Response(200, json=detail))
+def test_get_returns_detail_with_template_embedded(client):
+    respx.get(f"{BASE_URL}/api/agents/7").mock(
+        return_value=httpx.Response(200, json=AGENT_DETAIL),
+    )
     agent = client.agents.get(7)
     assert isinstance(agent, anyframe.AgentDetail)
-    assert agent.image is None
+    assert agent.template.repo_url == "tinyhq/box"
 
 
 @respx.mock
-def test_update_uses_patch(client):
-    detail = AGENT_PAYLOAD | {"skills": [], "mcps": [], "connectors": [], "image": None}
+def test_update_sends_only_fields_passed(client):
     route = respx.patch(f"{BASE_URL}/api/agents/7").mock(
-        return_value=httpx.Response(200, json=detail)
+        return_value=httpx.Response(200, json=AGENT_DETAIL),
     )
     client.agents.update(7, name="renamed")
-    assert route.called
-    sent = json.loads(route.calls.last.request.read())
-    assert sent == {"name": "renamed"}
+    assert json.loads(route.calls.last.request.read()) == {"name": "renamed"}
+
+
+@respx.mock
+def test_update_can_clear_permissions_override(client):
+    """Pass ``permissions_override=None`` to fall back to the template."""
+    route = respx.patch(f"{BASE_URL}/api/agents/7").mock(
+        return_value=httpx.Response(200, json=AGENT_DETAIL),
+    )
+    client.agents.update(7, permissions_override=None)
+    body = json.loads(route.calls.last.request.read())
+    assert body == {"permissions_override": None}
 
 
 @respx.mock
 def test_delete_sends_delete(client):
-    route = respx.delete(f"{BASE_URL}/api/agents/7").mock(return_value=httpx.Response(204))
+    route = respx.delete(f"{BASE_URL}/api/agents/7").mock(
+        return_value=httpx.Response(204),
+    )
     client.agents.delete(7)
     assert route.called
 
 
 @respx.mock
-def test_create_404_translates(client):
+def test_create_validation_error_translates(client):
     respx.post(f"{BASE_URL}/api/agents").mock(
-        return_value=httpx.Response(422, json={"detail": "name required"})
+        return_value=httpx.Response(422, json={"detail": "template_id required"}),
     )
     with pytest.raises(anyframe.ValidationError):
-        client.agents.create(name="")
+        client.agents.create(name="x", template_id=0)

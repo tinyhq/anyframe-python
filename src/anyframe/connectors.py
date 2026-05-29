@@ -161,7 +161,7 @@ class Connectors:
         *,
         display_name: str,
         command: str,
-        args: list[str] | None = None,
+        args: builtins.list[str] | None = None,
         env: dict[str, str] | None = None,
         default_enabled: bool = True,
     ) -> Connector:
@@ -169,7 +169,7 @@ class Connectors:
 
         Args:
             display_name: Label shown in the dashboard.
-            command: Executable path or name (must be 1–255 chars).
+            command: Executable path or name (must be 1-255 chars).
             args: Command-line arguments passed to ``command``.
             env: Environment variables exposed to the spawned process.
                 Values are encrypted at rest.
@@ -307,7 +307,7 @@ class AsyncConnectors:
         *,
         display_name: str,
         command: str,
-        args: list[str] | None = None,
+        args: builtins.list[str] | None = None,
         env: dict[str, str] | None = None,
         default_enabled: bool = True,
     ) -> Connector:

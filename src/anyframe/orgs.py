@@ -91,7 +91,11 @@ class OrgJoinRequests:
         return JoinRequestCreated.model_validate(data)
 
     def approve(
-        self, slug: str, request_id: int, *, role: OrgRole = "member",
+        self,
+        slug: str,
+        request_id: int,
+        *,
+        role: OrgRole = "member",
     ) -> OrgMember:
         """Admin: approve a pending join request and add the user as a member."""
         data = self._http.request(
@@ -104,7 +108,8 @@ class OrgJoinRequests:
     def reject(self, slug: str, request_id: int) -> None:
         """Admin: reject a pending join request."""
         self._http.request(
-            "POST", f"/api/orgs/{slug}/join-requests/{request_id}/reject",
+            "POST",
+            f"/api/orgs/{slug}/join-requests/{request_id}/reject",
         )
 
 
@@ -117,7 +122,10 @@ class OrgInvitations:
         self._http = http
 
     def list(
-        self, slug: str, *, include_resolved: bool = False,
+        self,
+        slug: str,
+        *,
+        include_resolved: bool = False,
     ) -> builtins.list[OrgInvitation]:
         """Admin-only: list invitations. Pending only by default."""
         data = self._http.request(
@@ -151,14 +159,17 @@ class OrgInvitations:
             }
         )
         data = self._http.request(
-            "POST", f"/api/orgs/{slug}/invitations", json=body,
+            "POST",
+            f"/api/orgs/{slug}/invitations",
+            json=body,
         )
         return OrgInvitationCreated.model_validate(data)
 
     def revoke(self, slug: str, invitation_id: int) -> None:
         """Admin-only: revoke a pending invitation."""
         self._http.request(
-            "POST", f"/api/orgs/{slug}/invitations/{invitation_id}/revoke",
+            "POST",
+            f"/api/orgs/{slug}/invitations/{invitation_id}/revoke",
         )
 
     def resend(self, slug: str, invitation_id: int) -> OrgInvitationCreated:
@@ -167,7 +178,8 @@ class OrgInvitations:
         The previous link stops working — useful for cycling a leaked link.
         """
         data = self._http.request(
-            "POST", f"/api/orgs/{slug}/invitations/{invitation_id}/resend",
+            "POST",
+            f"/api/orgs/{slug}/invitations/{invitation_id}/resend",
         )
         return OrgInvitationCreated.model_validate(data)
 
@@ -191,7 +203,8 @@ class OrgInvitations:
         ``id`` from one of those entries to accept it in place.
         """
         data = self._http.request(
-            "POST", f"/api/me/invitations/{invitation_id}/accept",
+            "POST",
+            f"/api/me/invitations/{invitation_id}/accept",
         )
         return OrgMembership.model_validate(data)
 
@@ -256,7 +269,9 @@ class OrgAudit:
         if since is not None:
             params["since"] = since
         data = self._http.request(
-            "GET", f"/api/orgs/{slug}/events", params=params,
+            "GET",
+            f"/api/orgs/{slug}/events",
+            params=params,
         )
         return [OrgEvent.model_validate(row) for row in data]
 
@@ -266,7 +281,8 @@ class OrgAudit:
         if kind is not None:
             params["kind"] = kind
         return self._http.get_bytes(
-            f"/api/orgs/{slug}/events/export.csv", params=params,
+            f"/api/orgs/{slug}/events/export.csv",
+            params=params,
         )
 
 
@@ -284,7 +300,9 @@ class Orgs:
     def check_slug(self, slug: str) -> SlugAvailability:
         """Check whether ``slug`` is available for a new org."""
         data = self._http.request(
-            "GET", "/api/orgs/check_slug", params={"slug": slug},
+            "GET",
+            "/api/orgs/check_slug",
+            params={"slug": slug},
         )
         return SlugAvailability.model_validate(data)
 
@@ -294,12 +312,16 @@ class Orgs:
         return [OrgMembership.model_validate(row) for row in data]
 
     def create(
-        self, *, slug: str, name: str, auto_join_domain: str | None = None,
+        self,
+        *,
+        slug: str,
+        name: str,
+        auto_join_domain: str | None = None,
     ) -> Org:
         """Create a new org. The current user becomes its owner.
 
         Args:
-            slug: URL slug — 2–32 chars, ``a-z0-9-`` with no leading,
+            slug: URL slug. 2-32 chars, ``a-z0-9-`` with no leading,
                 trailing, or consecutive hyphens. Reserved words like
                 ``new``, ``settings``, ``api`` are blocked.
             name: Display name.
@@ -344,7 +366,7 @@ class Orgs:
         )
         return Org.model_validate(data)
 
-    def activity(self, slug: str) -> dict[str, Any]:
+    def activity(self, slug: str) -> Any:
         """Return the dashboard activity summary for the org (member-only).
 
         Cheap aggregates (counts, recent events) — the exact shape evolves
@@ -367,7 +389,11 @@ class AsyncOrgMembers:
         return [OrgMember.model_validate(row) for row in data]
 
     async def change_role(
-        self, slug: str, user_id: int, *, role: OrgRole,
+        self,
+        slug: str,
+        user_id: int,
+        *,
+        role: OrgRole,
     ) -> OrgMember:
         data = await self._http.request(
             "PATCH",
@@ -398,7 +424,11 @@ class AsyncOrgJoinRequests:
         return JoinRequestCreated.model_validate(data)
 
     async def approve(
-        self, slug: str, request_id: int, *, role: OrgRole = "member",
+        self,
+        slug: str,
+        request_id: int,
+        *,
+        role: OrgRole = "member",
     ) -> OrgMember:
         data = await self._http.request(
             "POST",
@@ -409,7 +439,8 @@ class AsyncOrgJoinRequests:
 
     async def reject(self, slug: str, request_id: int) -> None:
         await self._http.request(
-            "POST", f"/api/orgs/{slug}/join-requests/{request_id}/reject",
+            "POST",
+            f"/api/orgs/{slug}/join-requests/{request_id}/reject",
         )
 
 
@@ -420,7 +451,10 @@ class AsyncOrgInvitations:
         self._http = http
 
     async def list(
-        self, slug: str, *, include_resolved: bool = False,
+        self,
+        slug: str,
+        *,
+        include_resolved: bool = False,
     ) -> builtins.list[OrgInvitation]:
         data = await self._http.request(
             "GET",
@@ -447,18 +481,22 @@ class AsyncOrgInvitations:
             }
         )
         data = await self._http.request(
-            "POST", f"/api/orgs/{slug}/invitations", json=body,
+            "POST",
+            f"/api/orgs/{slug}/invitations",
+            json=body,
         )
         return OrgInvitationCreated.model_validate(data)
 
     async def revoke(self, slug: str, invitation_id: int) -> None:
         await self._http.request(
-            "POST", f"/api/orgs/{slug}/invitations/{invitation_id}/revoke",
+            "POST",
+            f"/api/orgs/{slug}/invitations/{invitation_id}/revoke",
         )
 
     async def resend(self, slug: str, invitation_id: int) -> OrgInvitationCreated:
         data = await self._http.request(
-            "POST", f"/api/orgs/{slug}/invitations/{invitation_id}/resend",
+            "POST",
+            f"/api/orgs/{slug}/invitations/{invitation_id}/resend",
         )
         return OrgInvitationCreated.model_validate(data)
 
@@ -472,7 +510,8 @@ class AsyncOrgInvitations:
 
     async def accept_for_me(self, invitation_id: int) -> OrgMembership:
         data = await self._http.request(
-            "POST", f"/api/me/invitations/{invitation_id}/accept",
+            "POST",
+            f"/api/me/invitations/{invitation_id}/accept",
         )
         return OrgMembership.model_validate(data)
 
@@ -528,7 +567,9 @@ class AsyncOrgAudit:
         if since is not None:
             params["since"] = since
         data = await self._http.request(
-            "GET", f"/api/orgs/{slug}/events", params=params,
+            "GET",
+            f"/api/orgs/{slug}/events",
+            params=params,
         )
         return [OrgEvent.model_validate(row) for row in data]
 
@@ -537,7 +578,8 @@ class AsyncOrgAudit:
         if kind is not None:
             params["kind"] = kind
         return await self._http.get_bytes(
-            f"/api/orgs/{slug}/events/export.csv", params=params,
+            f"/api/orgs/{slug}/events/export.csv",
+            params=params,
         )
 
 
@@ -554,7 +596,9 @@ class AsyncOrgs:
 
     async def check_slug(self, slug: str) -> SlugAvailability:
         data = await self._http.request(
-            "GET", "/api/orgs/check_slug", params={"slug": slug},
+            "GET",
+            "/api/orgs/check_slug",
+            params={"slug": slug},
         )
         return SlugAvailability.model_validate(data)
 
@@ -563,7 +607,11 @@ class AsyncOrgs:
         return [OrgMembership.model_validate(row) for row in data]
 
     async def create(
-        self, *, slug: str, name: str, auto_join_domain: str | None = None,
+        self,
+        *,
+        slug: str,
+        name: str,
+        auto_join_domain: str | None = None,
     ) -> Org:
         body = _prune(
             {"slug": slug, "name": name, "auto_join_domain": auto_join_domain},
@@ -583,7 +631,10 @@ class AsyncOrgs:
         await self._http.request("DELETE", f"/api/orgs/{slug}")
 
     async def transfer_ownership(
-        self, slug: str, *, new_owner_user_id: int,
+        self,
+        slug: str,
+        *,
+        new_owner_user_id: int,
     ) -> Org:
         data = await self._http.request(
             "POST",
@@ -592,7 +643,7 @@ class AsyncOrgs:
         )
         return Org.model_validate(data)
 
-    async def activity(self, slug: str) -> dict[str, Any]:
+    async def activity(self, slug: str) -> Any:
         return await self._http.request("GET", f"/api/orgs/{slug}/activity")
 
 

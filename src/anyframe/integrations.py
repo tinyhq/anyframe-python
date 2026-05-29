@@ -66,7 +66,8 @@ class Integrations:
         set comes back in one round-trip.
         """
         data = self._http.request(
-            "GET", f"/api/integrations/github/installs/{install_id}/repos",
+            "GET",
+            f"/api/integrations/github/installs/{install_id}/repos",
         )
         return [GithubRepo.model_validate(row) for row in data]
 
@@ -122,12 +123,16 @@ class AsyncIntegrations:
 
     async def list_github_repos(self, install_id: int) -> builtins.list[GithubRepo]:
         data = await self._http.request(
-            "GET", f"/api/integrations/github/installs/{install_id}/repos",
+            "GET",
+            f"/api/integrations/github/installs/{install_id}/repos",
         )
         return [GithubRepo.model_validate(row) for row in data]
 
     async def set_binding(
-        self, install_id: int, *, agent_id: int,
+        self,
+        install_id: int,
+        *,
+        agent_id: int,
     ) -> IntegrationBinding:
         data = await self._http.request(
             "POST",

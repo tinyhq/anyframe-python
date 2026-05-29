@@ -108,7 +108,9 @@ class AsyncAnyFrame:
     async def set_active_org(self, org_id: int | None) -> User:
         """Switch the active workspace context (personal ↔ org)."""
         data = await self._http.request(
-            "POST", "/api/me/active_org", json={"org_id": org_id},
+            "POST",
+            "/api/me/active_org",
+            json={"org_id": org_id},
         )
         return User.model_validate(data)
 

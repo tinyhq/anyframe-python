@@ -10,22 +10,7 @@ import respx
 
 import anyframe
 from tests.conftest import BASE_URL
-
-CONNECTOR = {
-    "id": 1,
-    "display_name": "Linear",
-    "mcp_url": "https://mcp.linear.app/sse",
-    "transport": "http",
-    "auth_kind": "oauth_dcr",
-    "secret_last4": None,
-    "expires_at": None,
-    "scopes": None,
-    "is_authorized": True,
-    "last_refresh_attempt_at": None,
-    "last_refresh_error": None,
-    "created_at": "2025-01-01T00:00:00Z",
-    "updated_at": "2025-01-01T00:00:00Z",
-}
+from tests.payloads import CONNECTOR
 
 
 @respx.mock
@@ -114,3 +99,45 @@ def test_create_oauth_conflict_propagates(client):
     )
     with pytest.raises(anyframe.ConflictError):
         client.connectors.create_oauth(mcp_url="x", display_name="y")
+
+
+@respx.mock
+def test_create_custom_header(client):
+    """v2 adds custom-header auth — header_name lets you target X-API-Key etc."""
+    route = respx.post(f"{BASE_URL}/api/connectors/custom-header").mock(
+        return_value=httpx.Response(
+            200,
+            json=CONNECTOR | {"auth_kind": "custom_header"},
+        ),
+    )
+    out = client.connectors.create_custom_header(
+        mcp_url="https://mcp.example.com",
+        display_name="Ex",
+        header_name="X-API-Key",
+        token="t",
+    )
+    assert out.auth_kind == "custom_header"
+    body = json.loads(route.calls.last.request.read())
+    assert body == {
+        "mcp_url": "https://mcp.example.com",
+        "display_name": "Ex",
+        "header_name": "X-API-Key",
+        "token": "t",
+        "default_enabled": True,
+    }
+
+
+@respx.mock
+def test_create_stdio_defaults_args_and_env(client):
+    """v2 adds stdio connectors — args + env are optional, the SDK fills empties."""
+    route = respx.post(f"{BASE_URL}/api/connectors/stdio").mock(
+        return_value=httpx.Response(
+            200,
+            json=CONNECTOR | {"auth_kind": "stdio", "transport": "stdio"},
+        ),
+    )
+    client.connectors.create_stdio(display_name="local-mcp", command="my-mcp")
+    body = json.loads(route.calls.last.request.read())
+    assert body["command"] == "my-mcp"
+    assert body["args"] == []
+    assert body["env"] == {}

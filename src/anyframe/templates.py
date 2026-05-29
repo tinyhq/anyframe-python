@@ -59,7 +59,9 @@ class TemplateSkills:
     ) -> TemplateSkill:
         body = {"name": name, "source": source, "content": content, "enabled": enabled}
         data = self._http.request(
-            "POST", f"/api/templates/{template_id}/skills", json=body,
+            "POST",
+            f"/api/templates/{template_id}/skills",
+            json=body,
         )
         return TemplateSkill.model_validate(data)
 
@@ -82,7 +84,8 @@ class TemplateSkills:
 
     def delete(self, template_id: int, skill_id: int) -> None:
         self._http.request(
-            "DELETE", f"/api/templates/{template_id}/skills/{skill_id}",
+            "DELETE",
+            f"/api/templates/{template_id}/skills/{skill_id}",
         )
 
 
@@ -121,7 +124,9 @@ class TemplateMcps:
             }
         )
         data = self._http.request(
-            "POST", f"/api/templates/{template_id}/mcps", json=body,
+            "POST",
+            f"/api/templates/{template_id}/mcps",
+            json=body,
         )
         return TemplateMcp.model_validate(data)
 
@@ -144,13 +149,16 @@ class TemplateMcps:
             }
         )
         data = self._http.request(
-            "PATCH", f"/api/templates/{template_id}/mcps/{mcp_id}", json=body,
+            "PATCH",
+            f"/api/templates/{template_id}/mcps/{mcp_id}",
+            json=body,
         )
         return TemplateMcp.model_validate(data)
 
     def delete(self, template_id: int, mcp_id: int) -> None:
         self._http.request(
-            "DELETE", f"/api/templates/{template_id}/mcps/{mcp_id}",
+            "DELETE",
+            f"/api/templates/{template_id}/mcps/{mcp_id}",
         )
 
 
@@ -168,12 +176,17 @@ class TemplateConnectors:
 
     def list(self, template_id: int) -> builtins.list[TemplateConnectorToggle]:
         data = self._http.request(
-            "GET", f"/api/templates/{template_id}/connectors",
+            "GET",
+            f"/api/templates/{template_id}/connectors",
         )
         return [TemplateConnectorToggle.model_validate(row) for row in data]
 
     def set(
-        self, template_id: int, connector_id: int, *, enabled: bool,
+        self,
+        template_id: int,
+        connector_id: int,
+        *,
+        enabled: bool,
     ) -> TemplateConnectorToggle:
         data = self._http.request(
             "PUT",
@@ -215,7 +228,7 @@ class Templates:
         """Create a new template.
 
         Args:
-            name: Human-readable template name (1–255 chars).
+            name: Human-readable template name (1-255 chars).
             description: Optional free-text description.
             system_prompt: Optional system prompt prefix sent to the runtime.
             repo_url: GitHub ``owner/name``. Omit for a general-purpose
@@ -269,7 +282,9 @@ class Templates:
         re-warms every bound agent.
         """
         data = self._http.request(
-            "PATCH", f"/api/templates/{template_id}", json=fields,
+            "PATCH",
+            f"/api/templates/{template_id}",
+            json=fields,
         )
         return TemplateDetail.model_validate(data)
 
@@ -306,7 +321,9 @@ class AsyncTemplateSkills:
     ) -> TemplateSkill:
         body = {"name": name, "source": source, "content": content, "enabled": enabled}
         data = await self._http.request(
-            "POST", f"/api/templates/{template_id}/skills", json=body,
+            "POST",
+            f"/api/templates/{template_id}/skills",
+            json=body,
         )
         return TemplateSkill.model_validate(data)
 
@@ -329,7 +346,8 @@ class AsyncTemplateSkills:
 
     async def delete(self, template_id: int, skill_id: int) -> None:
         await self._http.request(
-            "DELETE", f"/api/templates/{template_id}/skills/{skill_id}",
+            "DELETE",
+            f"/api/templates/{template_id}/skills/{skill_id}",
         )
 
 
@@ -363,7 +381,9 @@ class AsyncTemplateMcps:
             }
         )
         data = await self._http.request(
-            "POST", f"/api/templates/{template_id}/mcps", json=body,
+            "POST",
+            f"/api/templates/{template_id}/mcps",
+            json=body,
         )
         return TemplateMcp.model_validate(data)
 
@@ -386,13 +406,16 @@ class AsyncTemplateMcps:
             }
         )
         data = await self._http.request(
-            "PATCH", f"/api/templates/{template_id}/mcps/{mcp_id}", json=body,
+            "PATCH",
+            f"/api/templates/{template_id}/mcps/{mcp_id}",
+            json=body,
         )
         return TemplateMcp.model_validate(data)
 
     async def delete(self, template_id: int, mcp_id: int) -> None:
         await self._http.request(
-            "DELETE", f"/api/templates/{template_id}/mcps/{mcp_id}",
+            "DELETE",
+            f"/api/templates/{template_id}/mcps/{mcp_id}",
         )
 
 
@@ -403,15 +426,21 @@ class AsyncTemplateConnectors:
         self._http = http
 
     async def list(
-        self, template_id: int,
+        self,
+        template_id: int,
     ) -> builtins.list[TemplateConnectorToggle]:
         data = await self._http.request(
-            "GET", f"/api/templates/{template_id}/connectors",
+            "GET",
+            f"/api/templates/{template_id}/connectors",
         )
         return [TemplateConnectorToggle.model_validate(row) for row in data]
 
     async def set(
-        self, template_id: int, connector_id: int, *, enabled: bool,
+        self,
+        template_id: int,
+        connector_id: int,
+        *,
+        enabled: bool,
     ) -> TemplateConnectorToggle:
         data = await self._http.request(
             "PUT",
@@ -473,7 +502,9 @@ class AsyncTemplates:
 
     async def update(self, template_id: int, **fields: Any) -> TemplateDetail:
         data = await self._http.request(
-            "PATCH", f"/api/templates/{template_id}", json=fields,
+            "PATCH",
+            f"/api/templates/{template_id}",
+            json=fields,
         )
         return TemplateDetail.model_validate(data)
 

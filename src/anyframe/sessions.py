@@ -352,12 +352,16 @@ class Sessions:
         and org modes (personal sessions only ever return the caller).
         """
         data = self._http.request(
-            "GET", f"/api/sessions/{_sid(session_id)}/presence",
+            "GET",
+            f"/api/sessions/{_sid(session_id)}/presence",
         )
         return [PresenceUser.model_validate(row) for row in data]
 
     def request_control(
-        self, session_id: SessionId, *, message: str | None = None,
+        self,
+        session_id: SessionId,
+        *,
+        message: str | None = None,
     ) -> ControlRequest:
         """Ask the current driver to hand the session off (org sessions only).
 
@@ -393,7 +397,9 @@ class Sessions:
         if request_id is not None:
             body["request_id"] = request_id
         data = self._http.request(
-            "POST", f"/api/sessions/{_sid(session_id)}/handoff", json=body,
+            "POST",
+            f"/api/sessions/{_sid(session_id)}/handoff",
+            json=body,
         )
         return HandoffResult.model_validate(data)
 
@@ -404,7 +410,8 @@ class Sessions:
         audit log even though the session behaves the same afterwards.
         """
         data = self._http.request(
-            "POST", f"/api/sessions/{_sid(session_id)}/take_over",
+            "POST",
+            f"/api/sessions/{_sid(session_id)}/take_over",
         )
         return HandoffResult.model_validate(data)
 
@@ -624,12 +631,16 @@ class AsyncSessions:
 
     async def presence(self, session_id: SessionId) -> builtins.list[PresenceUser]:
         data = await self._http.request(
-            "GET", f"/api/sessions/{_sid(session_id)}/presence",
+            "GET",
+            f"/api/sessions/{_sid(session_id)}/presence",
         )
         return [PresenceUser.model_validate(row) for row in data]
 
     async def request_control(
-        self, session_id: SessionId, *, message: str | None = None,
+        self,
+        session_id: SessionId,
+        *,
+        message: str | None = None,
     ) -> ControlRequest:
         body = _prune({"message": message})
         data = await self._http.request(
@@ -650,18 +661,24 @@ class AsyncSessions:
         if request_id is not None:
             body["request_id"] = request_id
         data = await self._http.request(
-            "POST", f"/api/sessions/{_sid(session_id)}/handoff", json=body,
+            "POST",
+            f"/api/sessions/{_sid(session_id)}/handoff",
+            json=body,
         )
         return HandoffResult.model_validate(data)
 
     async def take_over(self, session_id: SessionId) -> HandoffResult:
         data = await self._http.request(
-            "POST", f"/api/sessions/{_sid(session_id)}/take_over",
+            "POST",
+            f"/api/sessions/{_sid(session_id)}/take_over",
         )
         return HandoffResult.model_validate(data)
 
     async def set_privacy(
-        self, session_id: SessionId, *, private: bool,
+        self,
+        session_id: SessionId,
+        *,
+        private: bool,
     ) -> PrivacyResult:
         data = await self._http.request(
             "POST",

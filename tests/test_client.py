@@ -120,7 +120,15 @@ def test_me_returns_user(monkeypatch):
     respx.get("https://api.example.com/api/me").mock(
         return_value=httpx.Response(
             200,
-            json={"id": 1, "github_id": 42, "login": "nish", "name": "Nish", "avatar_url": None},
+            json={
+                "id": 1,
+                "github_id": 42,
+                "login": "nish",
+                "name": "Nish",
+                "email": "nish@example.com",
+                "avatar_url": None,
+                "is_superadmin": False,
+            },
         )
     )
     with anyframe.AnyFrame() as af:

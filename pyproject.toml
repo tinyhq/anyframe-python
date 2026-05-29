@@ -88,13 +88,16 @@ ignore = [
 # Pydantic models need their type imports at runtime to build validators,
 # even under `from __future__ import annotations`.
 "src/anyframe/models.py" = ["TC003"]
-# agents.py and sessions.py import ``builtins`` at runtime on purpose, so
-# that ``typing.get_type_hints()`` can resolve ``builtins.list[T]`` in our
+# These resource modules import ``builtins`` at runtime on purpose so that
+# ``typing.get_type_hints()`` can resolve ``builtins.list[T]`` in our
 # annotations (used to disambiguate from the resources' own ``list()`` method).
 "src/anyframe/agents.py" = ["TC003"]
-"src/anyframe/sessions.py" = ["TC003"]
-"src/anyframe/connectors.py" = ["TC003"]
 "src/anyframe/attention.py" = ["TC003"]
+"src/anyframe/connectors.py" = ["TC003"]
+"src/anyframe/integrations.py" = ["TC003"]
+"src/anyframe/orgs.py" = ["TC003"]
+"src/anyframe/templates.py" = ["TC003"]
+"src/anyframe/sessions.py" = ["TC003"]
 
 [tool.mypy]
 python_version = "3.10"

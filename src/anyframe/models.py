@@ -21,13 +21,20 @@ PreviewStatus = Literal["starting", "running", "paused", "stopped", "error"]
 McpTransport = Literal["http", "sse", "stdio"]
 SkillSource = Literal["inline", "git"]
 ConnectorAuthKind = Literal[
-    "oauth_dcr", "oauth_preregistered", "bearer_token", "custom_header", "stdio",
+    "oauth_dcr",
+    "oauth_preregistered",
+    "bearer_token",
+    "custom_header",
+    "stdio",
 ]
 PermissionPreset = Literal["read_only", "standard", "full_trust"]
 BuildState = Literal["queued", "running", "succeeded", "failed", "cancelled"]
 Runtime = Literal["claude", "codex"]
 CatalogSetupKind = Literal[
-    "oauth_dcr", "oauth_preregistered", "bearer_token", "custom_mcp",
+    "oauth_dcr",
+    "oauth_preregistered",
+    "bearer_token",
+    "custom_mcp",
 ]
 CatalogTrustLevel = Literal["official", "verified", "community"]
 OrgRole = Literal["member", "admin", "owner"]

@@ -77,7 +77,7 @@ class Agents:
         """Create a new agent bound to ``template_id``.
 
         Args:
-            name: Human-readable agent name (1–255 chars).
+            name: Human-readable agent name (1-255 chars).
             template_id: The :class:`Template` this agent binds to. The
                 template owns the repo, install/serve commands, system prompt,
                 skills, MCPs, and the baseline permissions and env vars.
@@ -151,7 +151,9 @@ class Agents:
             or a build is already in flight).
         """
         data = self._http.request(
-            "POST", f"/api/agents/{agent_id}/build", json={"force": force},
+            "POST",
+            f"/api/agents/{agent_id}/build",
+            json={"force": force},
         )
         return BuildQueued.model_validate(data)
 
@@ -163,14 +165,17 @@ class Agents:
     def builds(self, agent_id: int, *, limit: int = 20) -> builtins.list[Build]:
         """Return the most recent build runs for this agent, newest first."""
         data = self._http.request(
-            "GET", f"/api/agents/{agent_id}/builds", params={"limit": limit},
+            "GET",
+            f"/api/agents/{agent_id}/builds",
+            params={"limit": limit},
         )
         return [Build.model_validate(row) for row in data]
 
     def build_log_url(self, agent_id: int, build_id: int) -> LogUrl:
         """Return a signed URL for the build's archived log file."""
         data = self._http.request(
-            "GET", f"/api/agents/{agent_id}/builds/{build_id}/log_url",
+            "GET",
+            f"/api/agents/{agent_id}/builds/{build_id}/log_url",
         )
         return LogUrl.model_validate(data)
 
@@ -185,7 +190,8 @@ class Agents:
             decode the JSON payload.
         """
         lines = self._http.stream(
-            "GET", f"/api/agents/{agent_id}/builds/{build_id}/stream",
+            "GET",
+            f"/api/agents/{agent_id}/builds/{build_id}/stream",
         )
         yield from parse_sse(lines)
 
@@ -269,7 +275,9 @@ class AsyncAgents:
 
     async def build(self, agent_id: int, *, force: bool = False) -> BuildQueued:
         data = await self._http.request(
-            "POST", f"/api/agents/{agent_id}/build", json={"force": force},
+            "POST",
+            f"/api/agents/{agent_id}/build",
+            json={"force": force},
         )
         return BuildQueued.model_validate(data)
 
@@ -279,21 +287,27 @@ class AsyncAgents:
 
     async def builds(self, agent_id: int, *, limit: int = 20) -> builtins.list[Build]:
         data = await self._http.request(
-            "GET", f"/api/agents/{agent_id}/builds", params={"limit": limit},
+            "GET",
+            f"/api/agents/{agent_id}/builds",
+            params={"limit": limit},
         )
         return [Build.model_validate(row) for row in data]
 
     async def build_log_url(self, agent_id: int, build_id: int) -> LogUrl:
         data = await self._http.request(
-            "GET", f"/api/agents/{agent_id}/builds/{build_id}/log_url",
+            "GET",
+            f"/api/agents/{agent_id}/builds/{build_id}/log_url",
         )
         return LogUrl.model_validate(data)
 
     async def stream_build(
-        self, agent_id: int, build_id: int,
+        self,
+        agent_id: int,
+        build_id: int,
     ) -> AsyncIterator[SSEEvent]:
         lines = self._http.stream(
-            "GET", f"/api/agents/{agent_id}/builds/{build_id}/stream",
+            "GET",
+            f"/api/agents/{agent_id}/builds/{build_id}/stream",
         )
         async for event in parse_sse_async(lines):
             yield event

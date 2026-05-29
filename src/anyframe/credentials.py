@@ -62,12 +62,16 @@ class AsyncCredentials:
 
     async def set_claude(self, token: str) -> None:
         await self._http.request(
-            "PUT", "/api/credentials/claude", json={"token": token},
+            "PUT",
+            "/api/credentials/claude",
+            json={"token": token},
         )
 
     async def set_codex(self, token: str) -> None:
         await self._http.request(
-            "PUT", "/api/credentials/codex", json={"token": token},
+            "PUT",
+            "/api/credentials/codex",
+            json={"token": token},
         )
 
     async def clear_claude(self) -> None:

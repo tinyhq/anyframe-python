@@ -20,7 +20,7 @@ from tests.payloads import (
 
 INVITE_RESP: dict = {
     "invitation": ORG_INVITATION,
-    "url": "https://anyfrm.com/invites/tok_xyz",
+    "url": "https://anyframe.dev/invites/tok_xyz",
 }
 
 

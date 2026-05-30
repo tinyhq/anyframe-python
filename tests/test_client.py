@@ -58,11 +58,11 @@ def test_env_vars_used_when_kwargs_absent(monkeypatch):
         af.close()
 
 
-def test_default_base_url_is_anyfrm(monkeypatch):
+def test_default_base_url_is_anyframe(monkeypatch):
     _env(monkeypatch, ANYFRAME_API_KEY="afm_x")
     af = anyframe.AnyFrame()
     try:
-        assert "anyfrm.com" in str(af._http._client.base_url)
+        assert "anyframe.dev" in str(af._http._client.base_url)
     finally:
         af.close()
 

@@ -20,7 +20,7 @@ CATALOG_ITEM = {
     "setup_kind": "oauth_dcr",
     "publisher": "linear",
     "trust_level": "official",
-    "docs_url": "https://anyfrm.com/docs/connectors/linear",
+    "docs_url": "https://anyframe.dev/docs/connectors/linear",
     "tags": ["issues", "projects"],
     "has_logo": True,
     "coming_soon": False,

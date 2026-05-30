@@ -1,6 +1,22 @@
 name: Publish
 
+# Manual fallback path. The auto path lives in release-please.yml's publish
+# job — release-please creates the release via GITHUB_TOKEN, which GitHub
+# suppresses for downstream workflows, so we can't rely on `release: published`
+# firing here for release-please releases.
+#
+# Triggers:
+# - workflow_dispatch: manually republish a tag (e.g. recovering from a
+#   failed initial publish, or shipping a release the auto path missed).
+# - release: published: catches releases created through the GitHub UI by a
+#   real user (which DO trigger downstream workflows, unlike GITHUB_TOKEN).
 on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to publish (e.g. v2.0.0)'
+        required: true
+        type: string
   release:
     types: [published]
 
@@ -12,15 +28,13 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     if: github.repository == 'tinyhq/anyframe-python'
-    # Must match the environment name configured on the PyPI Trusted Publisher
-    # (PyPI → Manage project → Publishing). Without it, OIDC publish 403s.
     environment:
       name: pypi
       url: https://pypi.org/project/anyframe/
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.tag_name }}
+          ref: ${{ inputs.tag || github.event.release.tag_name }}
 
       - uses: astral-sh/setup-uv@v3
         with:

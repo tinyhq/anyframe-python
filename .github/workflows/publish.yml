@@ -1,0 +1,38 @@
+name: Publish
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    if: github.repository == 'tinyhq/anyframe-python'
+    # Must match the environment name configured on the PyPI Trusted Publisher
+    # (PyPI → Manage project → Publishing). Without it, OIDC publish 403s.
+    environment:
+      name: pypi
+      url: https://pypi.org/project/anyframe/
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - run: uv sync --frozen
+
+      - name: Tests (pre-publish gate)
+        run: uv run pytest -q
+
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+
+      - run: uv build
+      - run: uv publish

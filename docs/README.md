@@ -1,7 +1,7 @@
 # anyframe docs
 
 Single-page documentation site for the AnyFrame Python SDK, built with [Slate]
-(Middleman + Ruby) and hosted at **docs.anyfrm.com** on Cloudflare Pages.
+(Middleman + Ruby) and hosted at **docs.anyframe.dev** on Cloudflare Pages.
 
 - Source: `source/index.html.md` (one long Markdown file → one long HTML page).
 - Theme tokens: `source/stylesheets/_variables.scss`.
@@ -46,7 +46,7 @@ auto-detects it. The `RUBY_VERSION` env var is set redundantly as a safety net.
 
 ## Custom domain
 
-`docs.anyfrm.com` is attached to the CF Pages project from the **Custom
+`docs.anyframe.dev` is attached to the CF Pages project from the **Custom
 domains** tab. Cloudflare provisions the certificate automatically and adds
 the CNAME because the domain is already on Cloudflare DNS.
 

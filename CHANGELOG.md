@@ -2,6 +2,41 @@
 
 <!-- version list -->
 
+## [2.0.0](https://github.com/tinyhq/anyframe-python/compare/v1.1.0...v2.0.0) (2026-05-30)
+
+
+### ⚠ BREAKING CHANGES
+
+* agents.create() takes template_id plus optional runtime, permissions_override, env_vars_override instead of the pre-v2 fields (system_prompt, repo_url, repo_ref, install_cmd, serve_cmd, preview_ports, permissions, env_vars). agents.skills, agents.mcps, and agents.connectors were removed; use templates.skills / templates.mcps / templates.connectors. credentials.set_github and credentials.clear_github were removed (GitHub access flows through integrations on a GitHub App install). Credentials model no longer has a github field.
+
+### Features
+
+* rewrite resource surface for v2 control plane ([8c02d6b](https://github.com/tinyhq/anyframe-python/commit/8c02d6bcb60e46686df34b340a947cec3eac113f))
+* switch release tooling to release-please PR flow ([2df4381](https://github.com/tinyhq/anyframe-python/commit/2df4381b042f41404d0286e0b333c5ef33e07ce6))
+
+
+### Documentation
+
+* Add demo section to README ([76af940](https://github.com/tinyhq/anyframe-python/commit/76af940f05e1e00d982d02f9512a1576d3ca231f))
+* add explicit "Get an API key" section before Quickstart ([bf83dbe](https://github.com/tinyhq/anyframe-python/commit/bf83dbe2eb38e1345fcb3c5aff4840764c496723))
+* cleaner install snippet; pin copy button to top-right corner ([d0148e3](https://github.com/tinyhq/anyframe-python/commit/d0148e34b7fa7610eac4f2aa9b98e967939a47b9))
+* **css:** align code block width with surrounding text column ([aa74c46](https://github.com/tinyhq/anyframe-python/commit/aa74c46915e43c249a7be5bbfb9a95d11afbcedb))
+* **css:** centre ASCII diagrams in the content column ([00aa508](https://github.com/tinyhq/anyframe-python/commit/00aa50875bf8ff71ceaf0ff965505b6f07e1929f))
+* **css:** drop H1 underline; rely on whitespace for section breaks ([26754ef](https://github.com/tinyhq/anyframe-python/commit/26754efc8315842346e8090376312e226c744a59))
+* **css:** readability pass — typography, code alignment, sidebar weight ([c8c9ed7](https://github.com/tinyhq/anyframe-python/commit/c8c9ed7bb4cb6b42b2bdf4e5d53d4f0ccfa728e3))
+* **css:** strip chrome, one rhythm step, calm callouts ([27e5a98](https://github.com/tinyhq/anyframe-python/commit/27e5a986484f16239a8446c8ee0bb26daf0765b1))
+* drop "Or pip install"; copy button flashes "Copied" on click ([33c1f1d](https://github.com/tinyhq/anyframe-python/commit/33c1f1d17efdf22ea36abdada8c832a2fa580636))
+* GitHub + Discord icon links in the sidebar footer ([e62aba1](https://github.com/tinyhq/anyframe-python/commit/e62aba14fd4e8da5eb189037c577cef2fe87773f))
+* lead Quickstart with a take-over-a-web-session example ([ae599d3](https://github.com/tinyhq/anyframe-python/commit/ae599d319a5e80009c7c9729f582959d2c9f8093))
+* live-fleet visual + tagline at the top of Welcome ([53dac4d](https://github.com/tinyhq/anyframe-python/commit/53dac4ddd1e7620ccb8120c99a0f6be07780a455))
+* **nav:** keep every category's sublist expanded; fix missed clicks ([1f11c96](https://github.com/tinyhq/anyframe-python/commit/1f11c96c4d4a0168e2475bc98481d51f5846b3e0))
+* regroup sidebar into 6 categories; add web-chat quickstart ([7dc7784](https://github.com/tinyhq/anyframe-python/commit/7dc778413584a4aaee8d48e689e3a88e236988c0))
+* rewrite for v2; bump to 2.0.0 ([973fdc8](https://github.com/tinyhq/anyframe-python/commit/973fdc86da9e7e52003f866919b9369ccee7a6f3))
+* split Configuration and Errors out of "Help" ([4dc312f](https://github.com/tinyhq/anyframe-python/commit/4dc312fa965322fdae07219e5be4d2b197c54df4))
+* tagline above the fleet; real section separation between H1/H2 ([7718180](https://github.com/tinyhq/anyframe-python/commit/77181802fa1cabf1b73819e1d2de4095d299ca24))
+* trim prose hard — drop intros, redundant lists, defensive notes ([375722a](https://github.com/tinyhq/anyframe-python/commit/375722a24d54ed10bc45124c861f25abaad00ef8))
+* trim Welcome to fleet + tagline + 3 routing cards ([c219316](https://github.com/tinyhq/anyframe-python/commit/c219316588f10b5e9cf4a0ad1638346ab50a565a))
+
 ## v1.1.0 (2026-05-17)
 
 ### Bug Fixes

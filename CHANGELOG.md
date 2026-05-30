@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## [2.0.1](https://github.com/tinyhq/anyframe-python/compare/v2.0.0...v2.0.1) (2026-05-30)
+
+
+### Documentation
+
+* update domain to docs.anyframe.dev ([7f5bec1](https://github.com/tinyhq/anyframe-python/commit/7f5bec1405cfb3bae52608afc22b86ff55cf2209))
+* update domain to docs.anyframe.dev ([90174eb](https://github.com/tinyhq/anyframe-python/commit/90174ebbbb429c9ccba817c3827660526468c1df))
+
 ## [2.0.0](https://github.com/tinyhq/anyframe-python/compare/v1.1.0...v2.0.0) (2026-05-30)
 
 

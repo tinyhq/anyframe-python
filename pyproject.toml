@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "anyframe"
-version = "2.0.0"
+version = "1.1.0"
 description = "Official Python SDK for the AnyFrame control plane."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -44,7 +44,6 @@ dev = [
     "ruff>=0.6",
     "mypy>=1.10",
     "pre-commit>=3.7",
-    "python-semantic-release>=9.8",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -110,17 +109,3 @@ files = ["src/anyframe"]
 module = "tests.*"
 disallow_untyped_defs = false
 
-[tool.semantic_release]
-version_variables = ["src/anyframe/_version.py:__version__"]
-version_toml = ["pyproject.toml:project.version"]
-branch = "main"
-upload_to_pypi = false           # uv publish handles upload in CI
-upload_to_release = true
-build_command = "uv build"
-commit_parser = "conventional"
-major_on_zero = false            # while in 0.x, breaking changes bump minor
-
-[tool.semantic_release.commit_parser_options]
-allowed_tags = ["feat", "fix", "perf", "refactor", "docs", "test", "chore", "build", "ci", "style"]
-minor_tags = ["feat"]
-patch_tags = ["fix", "perf"]

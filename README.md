@@ -2,7 +2,7 @@
 
 [![PyPI version](https://img.shields.io/pypi/v/anyframe.svg)](https://pypi.org/project/anyframe/)
 
-The official Python SDK for the [AnyFrame](https://anyfrm.com) control plane - point an agent at a repo, get a sandbox running Claude Code inside.
+The official Python SDK for the [AnyFrame](https://anyframe.dev) control plane - point an agent at a repo, get a sandbox running Claude Code inside.
 
 ```
                                 ┌──────────────────────────────┐
@@ -38,7 +38,7 @@ uv add anyframe
 
 The SDK authenticates with a personal API token (prefix `afm_`).
 
-1. Sign in at [anyfrm.com](https://anyfrm.com).
+1. Sign in at [anyframe.dev](https://anyframe.dev).
 2. Open **Dashboard → Settings → API keys** and click **Create key**.
 3. Copy the `afm_...` token (shown once - store it now).
 4. Drop it into a `.env` next to your script, or export it:
@@ -102,7 +102,7 @@ print(session.sandbox_url)
 
 ```bash
 ANYFRAME_API_KEY=afm_...
-ANYFRAME_BASE_URL=https://api.anyfrm.com   # optional
+ANYFRAME_BASE_URL=https://api.anyframe.dev   # optional
 ANYFRAME_LOG_LEVEL=INFO                    # set DEBUG for request tracing
 ```
 
@@ -388,4 +388,4 @@ MIT.
 
 ---
 
-Docs: [docs.anyfrm.com](https://docs.anyfrm.com) · Found a bug or have a question? [Join us on Discord](https://discord.gg/UpkEW6JjpU).
+Docs: [docs.anyframe.dev](https://docs.anyframe.dev) · Found a bug or have a question? [Join us on Discord](https://discord.gg/UpkEW6JjpU).

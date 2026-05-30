@@ -37,7 +37,7 @@ if TYPE_CHECKING:  # pragma: no cover
 
 logger = logging.getLogger("anyframe")
 
-DEFAULT_BASE_URL = "https://api.anyfrm.com"
+DEFAULT_BASE_URL = "https://api.anyframe.dev"
 
 # Env var names — kept in one place so the docs, tests, and the resource
 # init message all agree.
@@ -71,7 +71,7 @@ class AnyFrame:
             value of the ``ANYFRAME_API_KEY`` environment variable is used.
         base_url: Override the control-plane URL. When omitted, the value of
             ``ANYFRAME_BASE_URL`` is used, falling back to
-            ``https://api.anyfrm.com``.
+            ``https://api.anyframe.dev``.
         timeout: Per-request timeout in seconds. Defaults to 30s.
         load_dotenv: If ``True`` (default), load a ``.env`` file from the
             current working directory before reading env vars. Set to

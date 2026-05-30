@@ -30,8 +30,8 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://anyfrm.com"
-Documentation = "https://docs.anyfrm.com"
+Homepage = "https://anyframe.dev"
+Documentation = "https://docs.anyframe.dev"
 Repository = "https://github.com/tinyhq/anyframe-python"
 Issues = "https://github.com/tinyhq/anyframe-python/issues"
 Changelog = "https://github.com/tinyhq/anyframe-python/blob/main/CHANGELOG.md"

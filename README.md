@@ -1,5 +1,7 @@
 # anyframe
 
+**`anyframe` is the official Python SDK for the AnyFrame control plane.**
+
 [![PyPI version](https://img.shields.io/pypi/v/anyframe.svg)](https://pypi.org/project/anyframe/)
 
 The official Python SDK for the [AnyFrame](https://anyframe.dev) control plane - point an agent at a repo, get a sandbox running Claude Code inside.
